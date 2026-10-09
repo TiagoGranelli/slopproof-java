@@ -1,5 +1,6 @@
 package com.example.slopproof.posts;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -81,6 +82,12 @@ class PostInputTest {
         .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
     refused("{\"title\":\"a\\u2061b\",\"body\":\"x\"}")
         .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    // Format characters outside the default-ignorable set are refused too: Arabic number sign, and
+    // interlinear annotation.
+    refused("{\"title\":\"a\\u0600b\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    refused("{\"title\":\"a\\ufff9b\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
   }
 
   @Test
@@ -100,6 +107,12 @@ class PostInputTest {
         .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
     refused("{\"title\":\"a\\ufe0f\\ufe0f\",\"body\":\"x\"}")
         .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    // A selector after a letter draws nothing, so it would carry a bit: refused.
+    refused("{\"title\":\"a\\ufe0fb\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    // An emoji drawn as a picture takes no emoji selector, which would draw nothing.
+    refused("{\"title\":\"\\ud83d\\ude00\\ufe0f\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
   }
 
   @Test
@@ -110,11 +123,17 @@ class PostInputTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"100 \\u20c1 \\uf8ff\",\"body\":\"x\"}"))
         .andExpect(status().isCreated());
-    // An emoji presentation selector after its character is ordinary.
+    // An emoji presentation selector after a symbol that has a text form is ordinary.
     mvc.perform(
             post(POSTS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"\\u2764\\ufe0f\",\"body\":\"x\"}"))
+        .andExpect(status().isCreated());
+    // A keycap: a digit, its selector and the combining enclosing keycap.
+    mvc.perform(
+            post(POSTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"1\\ufe0f\\u20e3\",\"body\":\"x\"}"))
         .andExpect(status().isCreated());
   }
 
@@ -190,7 +209,19 @@ class PostInputTest {
   }
 
   @Test
+  void acceptsABodyLessRequestWhateverItsCharset() throws Exception {
+    // No text is read, so the declared charset cannot change anything.
+    mvc.perform(get(POSTS + "?limit=1").contentType("application/json; charset=iso-8859-1"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
   void acceptsUtf8DeclaredAsCharset() throws Exception {
+    mvc.perform(
+            post(POSTS)
+                .contentType("application/json; charset=utf8")
+                .content("{\"title\":\"a\",\"body\":\"x\"}"))
+        .andExpect(status().isCreated());
     mvc.perform(
             post(POSTS)
                 .contentType("application/json; charset=UTF-8")

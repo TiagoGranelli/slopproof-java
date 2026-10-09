@@ -53,9 +53,11 @@ public class StrictUtf8JsonFilter extends OncePerRequestFilter {
     }
     int readLimit = (int) JsonInputConfiguration.MAX_DOCUMENT_LENGTH + 1;
     byte[] body = request.getInputStream().readNBytes(readLimit);
+    // A body-less request has no text for a charset to misread, so its header is not refused.
+    boolean charsetRefused = body.length > 0 && !declaresUtf8(contentType);
     if (body.length > JsonInputConfiguration.MAX_DOCUMENT_LENGTH
         || !isStrictJson(body)
-        || !declaresUtf8(contentType)) {
+        || charsetRefused) {
       refuse(response);
       return;
     }
@@ -66,11 +68,13 @@ public class StrictUtf8JsonFilter extends OncePerRequestFilter {
     return contentType.toLowerCase(Locale.ROOT).startsWith(MediaType.APPLICATION_JSON_VALUE);
   }
 
-  // Only UTF-8 may be named, and at most once: a repeated charset is read as the last one.
+  // Only UTF-8 may be named, and at most once: a repeated charset is read as the last one. The
+  // alias utf8 names the same charset.
   private static boolean declaresUtf8(String contentType) {
     String normalised = contentType.toLowerCase(Locale.ROOT).replaceAll("[\\s\"]", "");
     int charsets = occurrences(normalised, "charset");
-    return charsets == 0 || (charsets == 1 && occurrences(normalised, "charset=utf-8") == 1);
+    int utf8 = occurrences(normalised, "charset=utf-8") + occurrences(normalised, "charset=utf8");
+    return charsets == 0 || (charsets == 1 && utf8 == 1);
   }
 
   private static int occurrences(String text, String part) {

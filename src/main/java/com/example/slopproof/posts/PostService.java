@@ -23,13 +23,16 @@ public class PostService {
   // Tab, line feed and carriage return are the controls a body can hold on purpose.
   private static final Set<Integer> LINE_LAYOUT = Set.of(0x09, 0x0A, 0x0D);
 
-  // The two selectors that choose emoji or text presentation. They are the only default-ignorable
-  // characters a body may hold, and only after a visible character.
-  private static final Set<Integer> PRESENTATION_SELECTORS = Set.of(0xFE0E, 0xFE0F);
+  // The two selectors that choose text or emoji presentation. They are the only default-ignorable
+  // characters a body may hold, and only where they change how the character before them is drawn.
+  private static final int TEXT_STYLE_SELECTOR = 0xFE0E;
+  private static final int EMOJI_STYLE_SELECTOR = 0xFE0F;
+  private static final Set<Integer> PRESENTATION_SELECTORS =
+      Set.of(TEXT_STYLE_SELECTOR, EMOJI_STYLE_SELECTOR);
 
   private static final int ZERO_WIDTH_JOINER = 0x200D;
 
-  private static final int VARIATION_SELECTOR_16 = 0xFE0F;
+  private static final int COMBINING_ENCLOSING_KEYCAP = 0x20E3;
 
   // Unicode's Default_Ignorable_Code_Point property (DerivedCoreProperties, Unicode 16), as ranges.
   // These characters draw nothing a reader can see, so a body that holds one hides text from them.
@@ -123,13 +126,12 @@ public class PostService {
         || BLANK_FILLERS.contains(codePoint);
   }
 
-  // A position is refused by its own rule: a presentation selector needs a visible character
-  // before it, a joiner needs an emoji on each side, and any other character is refused when it
-  // is never allowed.
+  // A position is refused by its own rule: a selector must change the glyph before it, a joiner
+  // must sit inside an emoji sequence, and any other character is refused when it is never allowed.
   private static boolean isRefused(int[] codePoints, int index) {
     int codePoint = codePoints[index];
     if (PRESENTATION_SELECTORS.contains(codePoint)) {
-      return !followsVisibleCharacter(codePoints, index);
+      return !changesGlyph(codePoints, index);
     }
     if (codePoint == ZERO_WIDTH_JOINER) {
       return !joinsEmoji(codePoints, index);
@@ -137,8 +139,26 @@ public class PostService {
     return isNeverAllowed(codePoint);
   }
 
-  private static boolean followsVisibleCharacter(int[] codePoints, int index) {
-    return index > 0 && !isDefaultIgnorable(codePoints[index - 1]);
+  // A selector is kept only where it changes the glyph: the text style after an emoji drawn as a
+  // picture, the emoji style after a symbol that has a text form, and a keycap's selector before
+  // its enclosing keycap. Anywhere else it draws nothing and would carry a bit.
+  private static boolean changesGlyph(int[] codePoints, int index) {
+    if (index == 0) {
+      return false;
+    }
+    int previous = codePoints[index - 1];
+    if (codePoints[index] == TEXT_STYLE_SELECTOR) {
+      return Character.isEmojiPresentation(previous);
+    }
+    if (isKeycapBase(previous)) {
+      return index + 1 < codePoints.length && codePoints[index + 1] == COMBINING_ENCLOSING_KEYCAP;
+    }
+    return Character.isEmoji(previous) && !Character.isEmojiPresentation(previous);
+  }
+
+  // The digits, number sign and asterisk that take a keycap.
+  private static boolean isKeycapBase(int codePoint) {
+    return codePoint == '#' || codePoint == '*' || inRange(codePoint, '0', '9');
   }
 
   // A joiner glues two pictographs into one emoji, as in a family or a profession. Anywhere else
@@ -151,18 +171,19 @@ public class PostService {
     boolean afterEmoji =
         Character.isExtendedPictographic(previous)
             || Character.isEmojiModifier(previous)
-            || previous == VARIATION_SELECTOR_16;
+            || previous == EMOJI_STYLE_SELECTOR;
     return afterEmoji && Character.isExtendedPictographic(codePoints[index + 1]);
   }
 
   // Postgres refuses NUL, and a lone surrogate would be stored as '?' without an error. Other
-  // controls, such as an escape sequence, rewrite the terminal of whoever reads the post. A
-  // default-ignorable character hides text or reorders the text after it, so none is kept.
+  // controls, such as an escape sequence, rewrite the terminal of whoever reads the post. A format
+  // or default-ignorable character hides text or reorders the text after it, so none is kept.
   private static boolean isNeverAllowed(int codePoint) {
     int type = Character.getType(codePoint);
     boolean control = type == Character.CONTROL && !LINE_LAYOUT.contains(codePoint);
     return control
         || type == Character.SURROGATE
+        || type == Character.FORMAT
         || isDefaultIgnorable(codePoint)
         || isNoncharacter(codePoint);
   }
