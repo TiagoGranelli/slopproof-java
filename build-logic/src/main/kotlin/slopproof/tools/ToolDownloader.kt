@@ -81,9 +81,10 @@ internal fun proxySelector(env: Map<String, String>): ProxySelector {
 }
 
 /** The URL without its userinfo, so a token in a mirror URL never reaches a log. Unparseable input is hidden. */
-internal fun redactUrl(url: String): String = try {
-    val uri = URI(url)
-    if (uri.rawUserInfo == null) url else URI(uri.scheme, null, uri.host, uri.port, uri.path, uri.query, uri.fragment).toString()
-} catch (malformed: URISyntaxException) {
-    "<unparseable URL>"
-}
+internal fun redactUrl(url: String): String = USER_INFO.replace(url, "")
+
+/**
+ * Matches the authority's userinfo textually, not through URI: a host that URI rejects (an underscore, say) falls
+ * back to a registry-based authority, and the token would then survive a parse-based redaction.
+ */
+private val USER_INFO = Regex("(?<=://)[^/?#]*@")

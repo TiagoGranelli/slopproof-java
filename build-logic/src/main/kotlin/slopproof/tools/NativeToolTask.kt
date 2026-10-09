@@ -87,6 +87,11 @@ abstract class NativeToolTask : DefaultTask() {
     @get:Inject
     abstract val execOperations: ExecOperations
 
+    init {
+        // A skip writes no marker, so Gradle would call the next run UP-TO-DATE on an empty output and hide the skip.
+        outputs.upToDateWhen { !skipAll.get() && plan() is GatePlan.Run }
+    }
+
     @TaskAction
     fun run() {
         // A marker left by an earlier pass must not outlive a run that skips or fails.
@@ -96,11 +101,14 @@ abstract class NativeToolTask : DefaultTask() {
             return
         }
         when (val gate = plan()) {
-            // A warning, not a lifecycle line: a gate that checked nothing must not look like a pass.
+            // A warning, not a lifecycle line, and no marker: a gate that checked nothing must not look like a pass,
+            // and the next run must not be UP-TO-DATE on it.
             is GatePlan.Skip -> logger.warn("slopproof: ${toolName.get()} NOT RUN: ${gate.reason}")
-            is GatePlan.Run -> execute(gate.arguments)
+            is GatePlan.Run -> {
+                execute(gate.arguments)
+                writeMarker()
+            }
         }
-        writeMarker()
     }
 
     /** What to run. Subclasses override it when the arguments depend on git state rather than declared inputs. */

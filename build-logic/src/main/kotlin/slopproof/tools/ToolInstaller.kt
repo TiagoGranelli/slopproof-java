@@ -6,6 +6,7 @@ import java.io.File
 import java.io.OutputStream
 import java.nio.channels.FileChannel
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.StandardOpenOption
 import java.security.DigestInputStream
 import java.security.MessageDigest
@@ -23,13 +24,17 @@ data class ToolRelease(
 private const val COMPLETE_MARKER = ".complete"
 private const val LOCK_FILE = ".lock"
 
+/** Leading hex digits of the pin that name the install directory; a pin change gets a new directory. */
+private const val PIN_DIRECTORY_LENGTH = 16
+
 /** Serializes installs inside this JVM; the file lock below serializes them across builds. */
 private val jvmInstallLock = Any()
 
 /**
- * Installs pinned releases under [root] as `<tool>/<version>/<platform>/bin/<executable>`. A release is
- * downloaded once, verified against its SHA-256, extracted into a staging directory, and only then moved
- * into place with a `.complete` marker, so an interrupted install is never reused.
+ * Installs pinned releases under [root] as `<tool>/<version>/<platform>/<pin>/bin/<executable>`. The archive is
+ * kept beside `bin/`, so the executable can be derived from it again on every use. A release is downloaded once,
+ * verified against its SHA-256, extracted into a staging directory, and only then moved into place with a
+ * `.complete` marker, so an interrupted install is never reused.
  */
 internal class ToolInstaller(
     private val root: File,
@@ -37,11 +42,12 @@ internal class ToolInstaller(
     private val logger: Logger,
     private val downloader: ToolDownloader = ToolDownloader(),
 ) {
-    /** Returns the installed executable, downloading it first when it is not in [root] yet or no longer matches. */
+    /** Returns the installed executable, downloading it first when it is missing or no longer matches its pin. */
     fun install(release: ToolRelease): File {
-        val dir = root.resolve("${release.name}/${release.version}/${release.platform}")
+        val pinned = release.sha256.take(PIN_DIRECTORY_LENGTH)
+        val dir = root.resolve("${release.name}/${release.version}/${release.platform}/$pinned")
         val executable = dir.resolve("bin/${executableName(release.name, release.platform)}")
-        if (isVerified(release, dir, executable)) return executable
+        // The check runs under the lock too, so no build reads a directory that another build is replacing.
         return underLock {
             if (!isVerified(release, dir, executable)) fetch(release, dir, executable)
             executable
@@ -49,35 +55,45 @@ internal class ToolInstaller(
     }
 
     /**
-     * Reuses an install only while the pinned SHA-256 is the one it was fetched under and the executable still
-     * hashes to what was recorded. Without the second check, a replaced binary would run unnoticed.
+     * Reuses an install only when its archive still hashes to the pin and the executable matches what that archive
+     * yields. Checking the executable against the archive, not against a hash recorded at install time, is what
+     * stops a swapped binary from passing, even one whose marker was rewritten to match.
      */
     private fun isVerified(release: ToolRelease, dir: File, executable: File): Boolean {
-        val marker = dir.resolve(COMPLETE_MARKER)
-        if (!marker.isFile || !executable.isFile) return false
-        val recorded = marker.readLines()
-        return recorded.size == 2 && recorded[0] == release.sha256 && recorded[1] == sha256Of(executable)
+        val archive = dir.resolve(archiveName(release))
+        if (!dir.resolve(COMPLETE_MARKER).isFile || !archive.isFile || !executable.isFile) return false
+        if (sha256Of(archive) != release.sha256) return false
+        return sha256Of(executable) == expectedExecutableSha(release, archive, dir)
+    }
+
+    /** The hash the executable must have: the pin itself for a plain binary, else the hash of its entry in the archive. */
+    private fun expectedExecutableSha(release: ToolRelease, archive: File, dir: File): String? {
+        val entry = release.entry ?: return release.sha256
+        val probe = dir.resolve("verify.tmp")
+        return try {
+            if (extractEntry(archive, entry, probe)) sha256Of(probe) else null
+        } finally {
+            probe.delete()
+        }
     }
 
     private fun fetch(release: ToolRelease, dir: File, executable: File) {
         dir.parentFile.mkdirs()
         val staging = File(dir.parentFile, "${dir.name}.partial")
-        staging.deleteRecursively()
+        deleteTree(staging)
         staging.mkdirs()
         try {
-            val archive = staging.resolve(release.url.substringAfterLast('/'))
+            val archive = staging.resolve(archiveName(release))
             val url = mirrorUrl(release.url, mirror)
             logger.lifecycle("slopproof: fetching ${release.name} ${release.version} (${release.platform})")
             downloader.download(url, archive, "${release.name} ${release.version} (${release.platform})")
             verifyChecksum(release, archive)
-            val staged = staging.resolve("bin/${executableName(release.name, release.platform)}")
-            materialize(release, archive, staged)
-            archive.delete()
-            staging.resolve(COMPLETE_MARKER).writeText("${release.sha256}\n${sha256Of(staged)}\n")
-            dir.deleteRecursively()
+            materialize(release, archive, staging.resolve("bin/${executableName(release.name, release.platform)}"))
+            staging.resolve(COMPLETE_MARKER).writeText(release.sha256 + "\n")
+            deleteTree(dir)
             Files.move(staging.toPath(), dir.toPath())
         } finally {
-            staging.deleteRecursively()
+            deleteTree(staging)
         }
         check(executable.isFile) { "slopproof: ${release.name} ${release.version} installed without ${executable.name}" }
     }
@@ -116,6 +132,18 @@ internal class ToolInstaller(
     }
 }
 
+private fun archiveName(release: ToolRelease): String = release.url.substringAfterLast('/')
+
+/**
+ * Deletes [file] and everything under it without following symbolic links, so a link inside the cache can never
+ * delete files outside it.
+ */
+private fun deleteTree(file: File) {
+    val path = file.toPath()
+    if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) return
+    Files.walk(path).use { paths -> paths.sorted(Comparator.reverseOrder()).forEach { Files.delete(it) } }
+}
+
 /** Rewrites a github.com release URL onto [mirror], e.g. an Artifactory remote for GitHub. */
 internal fun mirrorUrl(url: String, mirror: String?): String {
     if (mirror.isNullOrBlank()) return url
@@ -127,4 +155,3 @@ internal fun sha256Of(file: File): String {
     DigestInputStream(file.inputStream().buffered(), digest).use { it.transferTo(OutputStream.nullOutputStream()) }
     return digest.digest().joinToString("") { "%02x".format(it) }
 }
-
