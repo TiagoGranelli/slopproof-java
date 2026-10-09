@@ -16,35 +16,41 @@ val libs = the<VersionCatalogsExtension>().named("libs")
 val googleJavaFormatVersion = libs.findVersion("google-java-format").get().requiredVersion
 val ktlintVersion = libs.findVersion("ktlint").get().requiredVersion
 
-// Build output and the Gradle caches are generated; formatting them only slows the gate down.
-val generatedPaths = listOf("**/build/**", "**/.gradle/**", "**/.kotlin/**")
+// Build output and the Gradle caches are generated. Each target is a file tree rooted outside them (or
+// excluding them, which prunes the walk): a target that walks build/ races the tasks writing there and
+// fails with "Could not read path" under --parallel.
+val generatedPaths = listOf("**/build/**", "**/.gradle/**", "**/.kotlin/**", "**/.git/**")
+
+fun sources(
+    root: String,
+    vararg includes: String,
+) = fileTree(root) {
+    include(*includes)
+    exclude(generatedPaths)
+}
 
 configure<SpotlessExtension> {
     // The repo is LF (.gitattributes). Without this, a Windows JVM writes CRLF and every file flips.
     lineEndings = LineEnding.UNIX
 
     java {
-        target("src/**/*.java")
-        targetExclude(*generatedPaths.toTypedArray())
+        target(sources("src", "**/*.java"))
         googleJavaFormat(googleJavaFormatVersion)
     }
 
     kotlin {
-        target("build-logic/src/**/*.kt")
-        targetExclude(*generatedPaths.toTypedArray())
+        target(sources("build-logic/src", "**/*.kt"))
         ktlint(ktlintVersion)
     }
 
     kotlinGradle {
-        target("*.gradle.kts", "build-logic/*.gradle.kts", "build-logic/src/**/*.gradle.kts")
-        targetExclude(*generatedPaths.toTypedArray())
+        target(sources(".", "*.gradle.kts", "build-logic/*.gradle.kts", "build-logic/src/**/*.gradle.kts"))
         ktlint(ktlintVersion)
     }
 
     // Plain text formats: no formatter, only the whitespace rules every editor shares with .editorconfig.
     format("text") {
-        target("*.md", "**/*.yaml", "**/*.yml", "**/*.sql", "**/*.toml", "**/*.xml")
-        targetExclude(*generatedPaths.toTypedArray())
+        target(sources(".", "*.md", "**/*.yaml", "**/*.yml", "**/*.sql", "**/*.toml", "**/*.xml"))
         trimTrailingWhitespace()
         endWithNewline()
     }
