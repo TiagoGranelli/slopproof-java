@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew check*)",
+      "Bash(./gradlew test*)",
+      "Bash(./gradlew spotlessApply*)",
+      "Bash(./gradlew externalChecks*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "deny": [
+      "Edit(/build/**)",
+      "Write(/build/**)",
+      "Edit(/build-logic/build/**)",
+      "Write(/build-logic/build/**)",
+      "Edit(**/gradle.lockfile)",
+      "Write(**/gradle.lockfile)",
+      "Edit(/gradle/verification-metadata.xml)",
+      "Write(/gradle/verification-metadata.xml)",
+      "Edit(/gradle/wrapper/**)",
+      "Write(/gradle/wrapper/**)",
+      "Bash(git commit --no-verify*)",
+      "Bash(git commit * --no-verify*)",
+      "Bash(git commit -n*)",
+      "Bash(git commit * -n*)",
+      "Bash(git -c core.hooksPath*)",
+      "Bash(*gradlew* --stop*)",
+      "Bash(*gradlew.bat* --stop*)"
+    ]
+  }
+}
