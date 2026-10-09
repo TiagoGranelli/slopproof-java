@@ -23,13 +23,13 @@ public class PostService {
   }
 
   /**
-   * Creates a post. Text that is blank once trimmed is refused, which the contract's length limits
-   * allow.
+   * Creates a post. The contract's length limits let whitespace-only and invisible text through,
+   * and Postgres refuses a NUL, so this refuses those before they reach the database.
    */
   @Transactional
   public Post create(String title, String body) {
-    requireNotBlank("title", title);
-    requireNotBlank("body", body);
+    requireText("title", title);
+    requireText("body", body);
     return repository.insert(title, body);
   }
 
@@ -60,9 +60,26 @@ public class PostService {
     }
   }
 
-  private static void requireNotBlank(String field, String value) {
-    if (value.isBlank()) {
-      throw new InvalidPostException(field, value.length());
+  private static void requireText(String field, String value) {
+    if (value.codePoints().allMatch(PostService::isInvisible)) {
+      throw new InvalidPostException(
+          "%s must not be blank (got %d characters)".formatted(field, value.length()));
     }
+    if (value.codePoints().anyMatch(PostService::isRefused)) {
+      throw new InvalidPostException(
+          "%s must not contain NUL or unpaired surrogate characters".formatted(field));
+    }
+  }
+
+  // String.isBlank misses no-break and zero-width spaces, which are whitespace to a reader.
+  private static boolean isInvisible(int codePoint) {
+    return Character.isWhitespace(codePoint)
+        || Character.isSpaceChar(codePoint)
+        || Character.getType(codePoint) == Character.FORMAT;
+  }
+
+  // Postgres refuses NUL, and a lone surrogate would be stored as '?' without an error.
+  private static boolean isRefused(int codePoint) {
+    return codePoint == 0 || Character.getType(codePoint) == Character.SURROGATE;
   }
 }

@@ -21,8 +21,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 /**
  * Answers every error of the API as {@code application/problem+json}, the shape of the contract's
- * Problem schema. Details name the field or parameter that was wrong and never echo the rejected
- * value: a request body can hold a secret, and a bad value is the client's own input.
+ * Problem schema. The details this class writes name the field or parameter that was wrong and
+ * never echo the rejected value, because a request body can hold a secret. Spring's own details for
+ * an unknown route, method or media type can repeat the request's path or type; those come from the
+ * client, not from anything stored.
  */
 @RestControllerAdvice
 public class ProblemHandling extends ResponseEntityExceptionHandler {
