@@ -30,6 +30,8 @@ ktlint = "1.8.0"
 archunit = "1.5.1"
 jqwik = "1.10.1"
 swagger-request-validator = "3.0.0"
+# Parses api/openapi.yaml for the contract coverage gate. The validator already brings this version, so pinning it adds nothing.
+swagger-parser = "2.1.41"
 pitest = "1.30.0"
 pitest-junit5 = "1.2.3"
 pitest-gradle = "1.19.0"
@@ -46,6 +48,7 @@ embedded-postgres-binaries-bom = { module = "io.zonky.test.postgres:embedded-pos
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
 swagger-request-validator-mockmvc = { module = "com.atlassian.oai:swagger-request-validator-mockmvc", version.ref = "swagger-request-validator" }
+swagger-parser = { module = "io.swagger.parser.v3:swagger-parser-v3", version.ref = "swagger-parser" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
 findsecbugs = { module = "com.h3xstream.findsecbugs:findsecbugs-plugin", version.ref = "findsecbugs" }
