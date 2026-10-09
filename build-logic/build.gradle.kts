@@ -4,9 +4,8 @@ plugins {
     `kotlin-dsl`
 }
 
-// wp:supply-chain
 // The convention plugins compile against these jars on every build, so they are locked like the project's own
-// configurations (build-logic/gradle.lockfile, written by `./gradlew resolveAndLockAll --write-locks`).
+// configurations (build-logic/gradle.lockfile, written by the command in AGENTS.md).
 dependencyLocking {
     lockAllConfigurations()
     lockMode = LockMode.STRICT

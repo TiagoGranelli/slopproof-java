@@ -23,9 +23,9 @@ spotbugs-gradle = "6.5.12"
 findsecbugs = "1.14.0"
 spotless = "8.10.3"
 google-java-format = "1.36.0"
-# wp:format 1.37.0 turned JavaFormatterOptions.Style into a record; spotless-lib 4.10.x (Spotless 8.10.3) still calls
+# 1.37.0 turned JavaFormatterOptions.Style into a record; spotless-lib 4.10.x (Spotless 8.10.3) still calls
 # Style.valueOf and fails with NoSuchMethodError. Stay on 1.36.0 until a spotless-lib release supports 1.37.
-# wp:format (released 2025-12-15, Kotlin scripts and build-logic sources; runs on the JDK 25 toolchain)
+# (released 2025-12-15, Kotlin scripts and build-logic sources; runs on the JDK 25 toolchain)
 ktlint = "1.8.0"
 archunit = "1.5.1"
 jqwik = "1.10.1"
@@ -37,10 +37,26 @@ pitest-junit5 = "1.2.3"
 pitest-gradle = "1.19.0"
 cyclonedx = "3.5.0"
 license-report = "3.1.4"
-# wp:testing JaCoCo 0.8.15 (released June 2026); it instruments Java 25 class files, see slopproof.testing.
+# JaCoCo 0.8.15 (released June 2026); it instruments Java 25 class files, see slopproof.testing.
 jacoco = "0.8.15"
+# Security overrides of the Spring Boot BOM (osv-scanner, 2026-10-09): Boot 4.1.1 manages Jackson 3.1.5 and
+# Tomcat 11.0.24, which carry critical and high advisories (GHSA-9xv2-5v5q-p794, GHSA-cxp5-3px4-pw24 and more).
+# The three Tomcat jars move together. Jackson 2 reaches the tests only, through the contract validator. Remove each once a Boot release manages it.
+jackson = "3.1.7"
+jackson2 = "2.21.7"
+tomcat = "11.0.25"
+jetbrains-annotations = "26.0.2"
 
 [libraries]
+jackson-bom = { module = "tools.jackson:jackson-bom", version.ref = "jackson" }
+jackson2-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson2" }
+tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
+tomcat-embed-el = { module = "org.apache.tomcat.embed:tomcat-embed-el", version.ref = "tomcat" }
+tomcat-embed-websocket = { module = "org.apache.tomcat.embed:tomcat-embed-websocket", version.ref = "tomcat" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version.ref = "spotbugs" }
+spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core" }
+spring-modulith-starter-test = { module = "org.springframework.modulith:spring-modulith-starter-test" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
 embedded-postgres = { module = "io.zonky.test:embedded-postgres", version.ref = "embedded-postgres" }
@@ -52,7 +68,6 @@ swagger-parser = { module = "io.swagger.parser.v3:swagger-parser-v3", version.re
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
 findsecbugs = { module = "com.h3xstream.findsecbugs:findsecbugs-plugin", version.ref = "findsecbugs" }
-# wp:static-analysis
 pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
 pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 pitest-junit5 = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5" }

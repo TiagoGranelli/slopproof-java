@@ -8,6 +8,7 @@
     { "bundleName": "EPL-1.0", "licenseName": "EPL-1.0", "licenseUrl": "https://www.eclipse.org/legal/epl-v10.html" },
     { "bundleName": "LGPL-2.1-only", "licenseName": "LGPL-2.1-only", "licenseUrl": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html" },
     { "bundleName": "GPL-2.0-only WITH Classpath-exception-2.0", "licenseName": "GPL-2.0-only WITH Classpath-exception-2.0", "licenseUrl": "https://openjdk.org/legal/gplv2+ce.html" },
+    { "bundleName": "MPL-2.0", "licenseName": "MPL-2.0", "licenseUrl": "https://www.mozilla.org/en-US/MPL/2.0/" },
     { "bundleName": "CC0-1.0", "licenseName": "CC0-1.0", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/legalcode" },
     { "bundleName": "LicenseRef-Public-Domain", "licenseName": "LicenseRef-Public-Domain", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/" }
   ],
@@ -25,6 +26,7 @@
     { "licenseUrlPattern": "https?://www\\.gnu\\.org/licenses/(old-licenses/)?lgpl-2\\.1(\\.html)?", "bundleName": "LGPL-2.1-only" },
     { "licenseNamePattern": "(GNU LESSER GENERAL PUBLIC LICENSE,? Version 2\\.1|GNU Lesser General Public License,? version 2\\.1|LGPL-2\\.1-only|LGPL 2\\.1)", "bundleName": "LGPL-2.1-only" },
     { "licenseNamePattern": "(GNU GENERAL PUBLIC LICENSE,? Version 2 \\+ Classpath Exception|GNU General Public License,? version 2 with the GNU Classpath Exception|GPL2 w/ CPE|GPL-2\\.0-only WITH Classpath-exception-2\\.0)", "bundleName": "GPL-2.0-only WITH Classpath-exception-2.0" },
+    { "licenseNamePattern": "(Mozilla Public License,? Version 2\\.0|MPL 2\\.0|MPL-2\\.0)", "bundleName": "MPL-2.0" },
     { "licenseNamePattern": "(CC0 1\\.0 Universal|CC0-1\\.0|Creative Commons Zero v1\\.0 Universal)", "bundleName": "CC0-1.0" },
     { "licenseNamePattern": "(Public Domain|public domain)", "bundleName": "LicenseRef-Public-Domain" }
   ]

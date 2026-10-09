@@ -17,6 +17,8 @@
       "Write(/build-logic/build/**)",
       "Edit(**/gradle.lockfile)",
       "Write(**/gradle.lockfile)",
+      "Edit(/settings-gradle.lockfile)",
+      "Write(/settings-gradle.lockfile)",
       "Edit(/gradle/verification-metadata.xml)",
       "Write(/gradle/verification-metadata.xml)",
       "Edit(/gradle/wrapper/**)",

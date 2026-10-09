@@ -30,6 +30,9 @@ jobs:
         with:
           # Without it the checkout keeps no token in .git/config, so the build cannot push with the job credentials.
           persist-credentials: false
+          # checkApiBreaking diffs the contract against its merge-base with origin/main. A shallow clone has no
+          # main to compare with, so the gate would skip.
+          fetch-depth: 0
 
       # Gradle would otherwise download a JDK 25 from foojay, which corporate networks often block.
       - name: Set up Temurin 25

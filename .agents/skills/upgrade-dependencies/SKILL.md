@@ -18,10 +18,12 @@ quarantine, and the codegen pins that equal the Spring Boot BOM. Read it first. 
 3. **Edit the catalog.** Change the exact version in `gradle/libs.versions.toml`. Keep the comment above a pin, and
    update it when the reason changes. A comment says why a pin is held back, for example Spotless and
    google-java-format.
-4. **Rewrite the verification metadata.** `./gradlew --write-verification-metadata sha256 check` records a SHA-256 for
-   each artifact in `gradle/verification-metadata.xml`. Review that the diff only adds and changes the bumped artifacts.
-5. **Rewrite the locks.** `./gradlew resolveAndLockAll --write-locks` records `gradle.lockfile`. Run `./gradlew check`
-   after it. A strict lock that does not match fails the build, which is the check you want.
+4. **Rewrite the locks and checksums.** `./gradlew spotlessApply && ./gradlew --write-locks --write-verification-metadata
+   sha256 check -x scanVulnerabilities` records the three lockfiles and a SHA-256 for each artifact in
+   `gradle/verification-metadata.xml`. Review that the diff only adds and changes the bumped artifacts.
+5. **Check on the new locks.** Run `./gradlew check`: it runs osv-scanner on the new lockfile, and a strict lock that
+   does not match fails the build, which is the check you want. Also run `./gradlew mutationTest bootJar` once, so the
+   tools outside `check` resolve against the checksums.
 6. **Native tools.** For each changed tool in `gradle/native-tools.toml`:
    - take the release's `published_at` with `gh api repos/<owner>/<repo>/releases/tags/<tag> --jq .published_at`, and
      require it to be at least a day old;
@@ -37,14 +39,8 @@ quarantine, and the codegen pins that equal the Spring Boot BOM. Read it first. 
 8. **Open one PR per coupled family.** Spring Boot, the jOOQ and Flyway pair, the OpenAPI generator, and Error Prone with
    NullAway each go in their own PR.
 
-## Open item
-
-`build-logic` has its own compile classpath, and once the supply-chain work lands it is locked too. A fresh checkout
-fails with `Locking strict mode: Configuration ':build-logic:compileClasspath' is locked but does not have lock
-state`. If `resolveAndLockAll` cannot lock `build-logic`, stop and report it. Do not turn the lock off.
-
 ## Done when
 
 - `./gradlew check` passes.
-- The catalog or native-tools change, `gradle/verification-metadata.xml` and `gradle.lockfile` are in one commit.
+- The catalog or native-tools change, `gradle/verification-metadata.xml` and the lockfiles are in one commit.
 - The commit message names each version that moved and the BOM value it matches.

@@ -89,20 +89,19 @@ negotiable: fix the code, never the threshold.
 | `./gradlew mutationTest` | PIT mutation testing, with its thresholds. Slow: run it on CI or nightly, not per change |
 | `./gradlew openApiGenerate`, `./gradlew generateJooq` | Regenerate the code from the contract and the migrations. `compileJava` runs both |
 | `./gradlew installGitHooks` | Points git at `config/git-hooks`, so the pre-commit hook runs `spotlessCheck`. Once per clone |
-| `./gradlew resolveAndLockAll --write-locks` | Rewrites `gradle.lockfile`. Only after a dependency change (wp/supply-chain) |
-| `./gradlew --write-verification-metadata sha256 check` | Rewrites `gradle/verification-metadata.xml` with checksums (wp/supply-chain) |
-| `./gradlew cyclonedxDirectBom` | Writes the SBOM to `build/reports/sbom/bom.json` (wp/supply-chain) |
-| `./gradlew checkLicense` | Fails on a license that is not in `config/licenses/allowed-licenses.json` (wp/supply-chain) |
+| `./gradlew spotlessApply && ./gradlew --write-locks --write-verification-metadata sha256 check -x scanVulnerabilities` | Rewrites the three lockfiles and `gradle/verification-metadata.xml`. Only after a dependency change; then run `./gradlew check` |
+| `./gradlew cyclonedxDirectBom` | Writes the SBOM to `build/reports/sbom/bom.json` |
+| `./gradlew checkLicense` | Fails on a license that is not in `config/licenses/allowed-licenses.json` (part of `check`) |
 
-`check` takes about 12 seconds from cold on the skeleton and under a second when nothing changed.
+`check` takes about 40 seconds from cold (49 tests on an embedded PostgreSQL) and about a second when nothing changed.
 
 ## Generated and locked files
 
 Never edit these by hand. Claude Code refuses the edit (`.claude/settings.json`).
 
 - `build/**`: generated code, reports and the native tool markers. Regenerate with the build.
-- `gradle.lockfile`: `./gradlew resolveAndLockAll --write-locks`.
-- `gradle/verification-metadata.xml`: `./gradlew --write-verification-metadata sha256 check`.
+- `gradle.lockfile`, `build-logic/gradle.lockfile`, `settings-gradle.lockfile` and `gradle/verification-metadata.xml`:
+  the lock command above, in one run.
 - `gradle/wrapper/**`: `./gradlew wrapper --gradle-version <version>`, reviewed as a build-tool change.
 - A migration already in `src/main/resources/db/migration`: Flyway stores its checksum, so a changed file fails
   validation. Add a new `V<n>__` file instead.
