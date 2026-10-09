@@ -1,0 +1,16 @@
+#!/bin/sh
+# Refuses a commit when the working tree is not formatted (Spotless, build-logic slopproof.format).
+# Enable once per clone with `./gradlew installGitHooks` (sets core.hooksPath to this directory).
+# POSIX sh on purpose: Git for Windows runs hooks through its bundled sh.exe, so Windows needs no WSL.
+# The check reads the working tree, not the index, so it also sees unstaged formatting drift.
+
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+
+if ! ./gradlew spotlessCheck --quiet; then
+  echo "" >&2
+  echo "pre-commit: spotlessCheck failed. Usually formatting: run ./gradlew spotlessApply" >&2
+  echo "pre-commit: (gradlew.bat on Windows), review the diff, stage it, commit again." >&2
+  echo "pre-commit: If the build did not start at all, check JAVA_HOME." >&2
+  exit 1
+fi
