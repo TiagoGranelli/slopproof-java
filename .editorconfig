@@ -1,0 +1,25 @@
+# Editor defaults that match the Spotless formatters (google-java-format, ktlint); see
+# build-logic/src/main/kotlin/slopproof.format.gradle.kts. Java keeps Google's two-space indent.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.java]
+indent_style = space
+indent_size = 2
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2
+
+# Windows batch files are CRLF in .gitattributes; keep them so cmd.exe runs them.
+[*.{bat,cmd}]
+end_of_line = crlf

@@ -22,7 +22,11 @@ spotbugs = "4.10.4"
 spotbugs-gradle = "6.5.12"
 findsecbugs = "1.14.0"
 spotless = "8.10.3"
-google-java-format = "1.37.0"
+google-java-format = "1.36.0"
+# wp:format 1.37.0 turned JavaFormatterOptions.Style into a record; spotless-lib 4.10.x (Spotless 8.10.3) still calls
+# Style.valueOf and fails with NoSuchMethodError. Stay on 1.36.0 until a spotless-lib release supports 1.37.
+# wp:format (released 2025-12-15, Kotlin scripts and build-logic sources; runs on the JDK 25 toolchain)
+ktlint = "1.8.0"
 archunit = "1.5.1"
 jqwik = "1.10.1"
 swagger-request-validator = "3.0.0"
