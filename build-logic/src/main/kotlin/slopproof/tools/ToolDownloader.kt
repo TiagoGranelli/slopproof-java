@@ -24,19 +24,21 @@ internal class ToolDownloader(env: Map<String, String> = System.getenv()) {
         .connectTimeout(Duration.ofSeconds(30))
         .build()
 
-    /** Writes the body of [url] to [target]. [describe] names the tool in errors, e.g. "vacuum 0.32.0 (linux-x64)". */
+    /**
+     * Writes the body of [url] to [target]. [describe] names the tool and its public source in errors. Errors never
+     * print [url]: a mirror URL may carry a token, so the caller describes the GitHub URL instead.
+     */
     fun download(url: String, target: File, describe: String) {
         val request = try {
             HttpRequest.newBuilder(URI.create(url)).GET().build()
         } catch (invalid: IllegalArgumentException) {
-            throw GradleException("slopproof: $describe has an invalid download URL ${redactUrl(url)}. Check -Pslopproof.tools.mirror.")
+            throw GradleException("slopproof: $describe has an invalid download URL. Check -Pslopproof.tools.mirror.")
         }
-        val shown = redactUrl(url)
         val response = try {
             client.send(request, HttpResponse.BodyHandlers.ofFile(target.toPath()))
         } catch (failure: IOException) {
             throw GradleException(
-                "slopproof: cannot download $describe from $shown (${failure.javaClass.simpleName}). " +
+                "slopproof: cannot download $describe (${failure.javaClass.simpleName}). " +
                     "Behind a proxy? Set HTTPS_PROXY to host:port, or point -Pslopproof.tools.mirror at an internal " +
                     "mirror of GitHub releases, or skip with -Pslopproof.tools.skip=true.",
                 failure,
@@ -45,7 +47,7 @@ internal class ToolDownloader(env: Map<String, String> = System.getenv()) {
         if (response.statusCode() != HTTP_OK) {
             target.delete()
             throw GradleException(
-                "slopproof: $describe download returned HTTP ${response.statusCode()} for $shown. " +
+                "slopproof: $describe download returned HTTP ${response.statusCode()}. " +
                     "Check the URL pinned in gradle/native-tools.toml, or the mirror in -Pslopproof.tools.mirror.",
             )
         }
@@ -79,12 +81,3 @@ internal fun proxySelector(env: Map<String, String>): ProxySelector {
     }
     return ProxySelector.of(InetSocketAddress(uri.host, uri.port))
 }
-
-/** The URL without its userinfo, so a token in a mirror URL never reaches a log. Unparseable input is hidden. */
-internal fun redactUrl(url: String): String = USER_INFO.replace(url, "")
-
-/**
- * Matches the authority's userinfo textually, not through URI: a host that URI rejects (an underscore, say) falls
- * back to a registry-based authority, and the token would then survive a parse-based redaction.
- */
-private val USER_INFO = Regex("(?<=://)[^/?#]*@")

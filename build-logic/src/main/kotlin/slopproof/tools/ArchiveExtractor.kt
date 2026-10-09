@@ -3,7 +3,10 @@ package slopproof.tools
 import org.gradle.api.GradleException
 import java.io.File
 import java.io.InputStream
+import java.io.OutputStream
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
 import java.util.zip.GZIPInputStream
 import java.util.zip.ZipInputStream
 
@@ -26,7 +29,7 @@ private fun extractZip(archive: File, entry: String, target: File): Boolean =
     ZipInputStream(archive.inputStream().buffered()).use { zip ->
         val found = generateSequence { zip.nextEntry }.firstOrNull { it.name.removePrefix("./") == entry }
         if (found == null) return false
-        target.outputStream().use { zip.copyTo(it) }
+        createNew(target).use { zip.copyTo(it) }
         true
     }
 
@@ -71,8 +74,15 @@ private fun octal(header: ByteArray, offset: Int, length: Int): Long {
 
 private fun paddedSize(size: Long): Long = (size + TAR_BLOCK - 1) / TAR_BLOCK * TAR_BLOCK
 
+/**
+ * Opens [target] for writing only if nothing exists at that path. A planted link or an existing file is refused,
+ * so an extraction can never write through a symbolic link into another location.
+ */
+private fun createNew(target: File): OutputStream =
+    Files.newOutputStream(target.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+
 private fun copyExactly(tar: InputStream, target: File, size: Long) {
-    target.outputStream().use { out ->
+    createNew(target).use { out ->
         val buffer = ByteArray(64 * 1024)
         var remaining = size
         while (remaining > 0) {

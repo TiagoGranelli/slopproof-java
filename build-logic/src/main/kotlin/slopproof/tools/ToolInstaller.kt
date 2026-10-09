@@ -10,6 +10,7 @@ import java.nio.file.LinkOption
 import java.nio.file.StandardOpenOption
 import java.security.DigestInputStream
 import java.security.MessageDigest
+import java.util.UUID
 
 /** A pinned tool for one platform, as the build sees it. [entry] is null for a plain executable. */
 data class ToolRelease(
@@ -69,11 +70,12 @@ internal class ToolInstaller(
     /** The hash the executable must have: the pin itself for a plain binary, else the hash of its entry in the archive. */
     private fun expectedExecutableSha(release: ToolRelease, archive: File, dir: File): String? {
         val entry = release.entry ?: return release.sha256
-        val probe = dir.resolve("verify.tmp")
+        // A random name the extraction creates fresh (CREATE_NEW), so no link planted at a known name can redirect it.
+        val probe = dir.resolve("verify-${UUID.randomUUID()}.tmp")
         return try {
             if (extractEntry(archive, entry, probe)) sha256Of(probe) else null
         } finally {
-            probe.delete()
+            Files.deleteIfExists(probe.toPath())
         }
     }
 
@@ -85,8 +87,10 @@ internal class ToolInstaller(
         try {
             val archive = staging.resolve(archiveName(release))
             val url = mirrorUrl(release.url, mirror)
+            // Errors name the public GitHub URL, never the mirror URL, which may carry a token.
+            val source = if (mirror.isNullOrBlank()) release.url else "${release.url} (via -Pslopproof.tools.mirror)"
             logger.lifecycle("slopproof: fetching ${release.name} ${release.version} (${release.platform})")
-            downloader.download(url, archive, "${release.name} ${release.version} (${release.platform})")
+            downloader.download(url, archive, "${release.name} ${release.version} (${release.platform}) from $source")
             verifyChecksum(release, archive)
             materialize(release, archive, staging.resolve("bin/${executableName(release.name, release.platform)}"))
             staging.resolve(COMPLETE_MARKER).writeText(release.sha256 + "\n")
@@ -102,7 +106,8 @@ internal class ToolInstaller(
         target.parentFile.mkdirs()
         val entry = release.entry
         if (entry == null) {
-            archive.copyTo(target, overwrite = true)
+            // Files.copy refuses an existing target, so a link planted at the target path is never written through.
+            Files.copy(archive.toPath(), target.toPath())
         } else if (!extractEntry(archive, entry, target)) {
             throw GradleException(
                 "slopproof: ${release.name} ${release.version} (${release.platform}) archive ${archive.name} has no " +
