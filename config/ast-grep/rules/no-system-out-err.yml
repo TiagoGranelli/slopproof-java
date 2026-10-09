@@ -1,0 +1,11 @@
+id: no-system-out-err
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  System.out and System.err skip the logger: no level, no request context, no JSON line. Log through an
+  SLF4J logger (private static final Logger log = LoggerFactory.getLogger(...)) instead.
+rule:
+  kind: field_access
+  regex: '^System\.(out|err)$'

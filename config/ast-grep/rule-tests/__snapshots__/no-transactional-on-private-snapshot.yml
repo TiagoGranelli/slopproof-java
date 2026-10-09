@@ -1,0 +1,50 @@
+id: no-transactional-on-private
+snapshots:
+  ? |
+    class PostService {
+      @Transactional
+      private void publish() { save(); }
+    }
+  : labels:
+    - source: |-
+        @Transactional
+          private void publish() { save(); }
+      style: primary
+      start: 22
+      end: 73
+    - source: |-
+        @Transactional
+          private
+      style: secondary
+      start: 22
+      end: 46
+    - source: |-
+        @Transactional
+          private
+      style: secondary
+      start: 22
+      end: 46
+  ? |
+    class PostService {
+      @Transactional(readOnly = true)
+      private List<Post> all() { return load(); }
+    }
+  : labels:
+    - source: |-
+        @Transactional(readOnly = true)
+          private List<Post> all() { return load(); }
+      style: primary
+      start: 22
+      end: 99
+    - source: |-
+        @Transactional(readOnly = true)
+          private
+      style: secondary
+      start: 22
+      end: 63
+    - source: |-
+        @Transactional(readOnly = true)
+          private
+      style: secondary
+      start: 22
+      end: 63

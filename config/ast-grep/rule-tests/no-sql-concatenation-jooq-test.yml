@@ -1,0 +1,21 @@
+id: no-sql-concatenation-jooq
+valid:
+  - |
+    class Posts {
+      Condition byTitle(String title) { return DSL.field("title").eq(DSL.val(title)); }
+      Field<?> raw() { return DSL.sql("created_at"); }
+      Field<?> bound(String title) { return DSL.sql("title = {0}", title); }
+    }
+invalid:
+  - |
+    class Posts {
+      Field<?> order(String column) { return DSL.sql("order by " + column); }
+    }
+  - |
+    class Posts {
+      Condition byTitle(String title) { return DSL.condition("title = '" + title + "'"); }
+    }
+  - |
+    class Posts {
+      Field<?> column(String name) { return DSL.field("\"" + name + "\""); }
+    }

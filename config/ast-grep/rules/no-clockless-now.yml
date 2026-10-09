@@ -1,0 +1,13 @@
+id: no-clockless-now
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  now() reads the system clock, so a test cannot freeze it and two calls in one request can disagree. Inject
+  a java.time.Clock and call LocalDateTime.now(clock) (or Instant.now(clock)) instead.
+rule:
+  pattern: $TYPE.now()
+constraints:
+  TYPE:
+    regex: '^(LocalDateTime|LocalDate|LocalTime|ZonedDateTime|OffsetDateTime|Instant)$'

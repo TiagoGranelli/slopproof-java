@@ -1,0 +1,29 @@
+id: no-empty-catch
+valid:
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { throw new UncheckedIOException("load failed", e); }
+      }
+    }
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { log.warn("retrying", e); retry(); }
+      }
+    }
+invalid:
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) {}
+      }
+    }
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) {
+          // ignored on purpose
+        }
+      }
+    }

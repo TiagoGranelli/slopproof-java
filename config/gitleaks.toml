@@ -1,0 +1,15 @@
+# Secret gate: gitleaks scans the working tree (`gitleaks dir .`) for keys and tokens with its default rules.
+# The allowlist covers only generated or build output, and test fixtures that hold obviously fake secrets.
+# A fixture may hold a secret-shaped value only if it is fake. Never allowlist a source path to silence a hit.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Build output, the Gradle cache and generated lock files; test fixtures with fake secrets"
+paths = [
+  '''(^|/)build/''',
+  '''(^|/)\.gradle/''',
+  '''(^|/)gradle/verification-metadata\.xml$''',
+  '''\.lockfile$''',
+  '''(^|/)src/test/resources/fixtures/''',
+]

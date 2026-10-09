@@ -1,0 +1,30 @@
+id: no-transactional-in-api
+valid:
+  - |
+    package com.example.slopproof.posts;
+
+    class PostService {
+      @Transactional
+      public void publish() {}
+    }
+  - |
+    package com.example.slopproof.posts;
+
+    class PostController {
+      public void create() {}
+    }
+invalid:
+  - |
+    package com.example.slopproof.api;
+
+    @Transactional
+    class PostController {
+      public void create() {}
+    }
+  - |
+    package com.example.slopproof.api.v1;
+
+    class PostController {
+      @Transactional(readOnly = true)
+      public void list() {}
+    }

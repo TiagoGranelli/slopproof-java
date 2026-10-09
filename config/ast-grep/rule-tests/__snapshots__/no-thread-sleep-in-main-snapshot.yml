@@ -1,0 +1,11 @@
+id: no-thread-sleep-in-main
+snapshots:
+  ? |
+    class Retry {
+      void run() { Thread.sleep(2000); }
+    }
+  : labels:
+    - source: Thread.sleep(2000)
+      style: primary
+      start: 29
+      end: 47

@@ -1,0 +1,33 @@
+id: no-lombok
+snapshots:
+  ? |
+    @lombok.Value
+    class Post {
+      String id;
+    }
+  : labels:
+    - source: '@lombok.Value'
+      style: primary
+      start: 0
+      end: 13
+  ? |
+    import lombok.Data;
+
+    @Data
+    class Post {
+      String id;
+    }
+  : labels:
+    - source: import lombok.Data;
+      style: primary
+      start: 0
+      end: 19
+  ? |
+    import static lombok.AccessLevel.PRIVATE;
+
+    class Post {}
+  : labels:
+    - source: import static lombok.AccessLevel.PRIVATE;
+      style: primary
+      start: 0
+      end: 41

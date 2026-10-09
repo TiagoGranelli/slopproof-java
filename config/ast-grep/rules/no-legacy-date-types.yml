@@ -1,0 +1,18 @@
+id: no-legacy-date-types
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  java.util.Date, Calendar and GregorianCalendar are mutable, time-zone dependent and not thread safe. Use
+  java.time (Instant for a moment, LocalDate or ZonedDateTime for a calendar value) and inject a Clock.
+rule:
+  any:
+    - kind: import_declaration
+      regex: '^import\s+java\.util\.(Date|Calendar|GregorianCalendar)\s*;'
+    - pattern: new Date($$$ARGS)
+    - pattern: new java.util.Date($$$ARGS)
+    - pattern: Calendar.getInstance($$$ARGS)
+    - pattern: new GregorianCalendar($$$ARGS)
+    - kind: scoped_type_identifier
+      regex: '^java\.util\.(Date|Calendar|GregorianCalendar)$'

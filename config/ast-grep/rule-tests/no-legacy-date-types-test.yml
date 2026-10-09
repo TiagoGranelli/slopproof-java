@@ -1,0 +1,27 @@
+id: no-legacy-date-types
+valid:
+  - |
+    import java.time.Instant;
+
+    class Posts {
+      Instant at(Clock clock) { return Instant.now(clock); }
+    }
+invalid:
+  - |
+    import java.util.Date;
+
+    class Posts {
+      Instant at() { return null; }
+    }
+  - |
+    class Posts {
+      Object at() { return new Date(); }
+    }
+  - |
+    class Posts {
+      Object at() { return Calendar.getInstance(); }
+    }
+  - |
+    class Posts {
+      java.util.Date at;
+    }

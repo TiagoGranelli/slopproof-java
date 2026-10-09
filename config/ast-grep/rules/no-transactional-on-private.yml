@@ -1,0 +1,17 @@
+id: no-transactional-on-private
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  Spring applies @Transactional through a proxy, which cannot intercept a private method, so no transaction
+  starts. Make the method public on a Spring bean (a service or repository) and call it from there.
+rule:
+  kind: method_declaration
+  all:
+    - has:
+        kind: modifiers
+        regex: '\bprivate\b'
+    - has:
+        kind: modifiers
+        regex: '@Transactional\b'

@@ -1,0 +1,47 @@
+id: no-sql-concatenation-jdbc
+snapshots:
+  ? |
+    class Posts {
+      void run(Connection connection, String title) throws SQLException {
+        connection.prepareStatement("select * from posts where title = '" + title + "'");
+      }
+    }
+  : labels:
+    - source: connection.prepareStatement("select * from posts where title = '" + title + "'")
+      style: primary
+      start: 88
+      end: 168
+    - source: '"select * from posts where title = ''" + title + "''"'
+      style: secondary
+      start: 116
+      end: 167
+  ? |
+    class Posts {
+      void run(JdbcTemplate jdbcTemplate, String title) {
+        jdbcTemplate.query("select * from posts where title = '" + title + "'", mapper);
+      }
+    }
+  : labels:
+    - source: jdbcTemplate.query("select * from posts where title = '" + title + "'", mapper)
+      style: primary
+      start: 72
+      end: 151
+    - source: '"select * from posts where title = ''" + title + "''"'
+      style: secondary
+      start: 91
+      end: 142
+  ? |
+    class Posts {
+      void run(Statement statement, String title) throws SQLException {
+        statement.executeQuery("select * from posts where title = '" + title + "'");
+      }
+    }
+  : labels:
+    - source: statement.executeQuery("select * from posts where title = '" + title + "'")
+      style: primary
+      start: 86
+      end: 161
+    - source: '"select * from posts where title = ''" + title + "''"'
+      style: secondary
+      start: 109
+      end: 160

@@ -1,0 +1,10 @@
+id: no-print-stack-trace
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  printStackTrace() writes to stderr, outside the log. Pass the exception to the logger instead:
+  log.error("what failed", exception).
+rule:
+  pattern: $EXCEPTION.printStackTrace($$$ARGS)

@@ -1,0 +1,47 @@
+id: no-broad-catch
+snapshots:
+  ? |
+    class Posts {
+      Post run() {
+        try { return load(); } catch (RuntimeException e) { return null; }
+      }
+    }
+  : labels:
+    - source: catch (RuntimeException e) { return null; }
+      style: primary
+      start: 56
+      end: 99
+    - source: RuntimeException e
+      style: secondary
+      start: 63
+      end: 81
+  ? |
+    class Posts {
+      void run() {
+        try { load(); } catch (Exception e) { log.error("load failed", e); }
+      }
+    }
+  : labels:
+    - source: catch (Exception e) { log.error("load failed", e); }
+      style: primary
+      start: 49
+      end: 101
+    - source: Exception e
+      style: secondary
+      start: 56
+      end: 67
+  ? |
+    class Posts {
+      void run() {
+        try { load(); } catch (Throwable t) { log.warn("ignored", t); }
+      }
+    }
+  : labels:
+    - source: catch (Throwable t) { log.warn("ignored", t); }
+      style: primary
+      start: 49
+      end: 96
+    - source: Throwable t
+      style: secondary
+      start: 56
+      end: 67

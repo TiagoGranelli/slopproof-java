@@ -1,0 +1,40 @@
+id: no-empty-catch
+snapshots:
+  ? |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) {
+          // ignored on purpose
+        }
+      }
+    }
+  : labels:
+    - source: |-
+        catch (IOException e) {
+              // ignored on purpose
+            }
+      style: primary
+      start: 49
+      end: 106
+    - source: |-
+        {
+              // ignored on purpose
+            }
+      style: secondary
+      start: 71
+      end: 106
+  ? |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) {}
+      }
+    }
+  : labels:
+    - source: catch (IOException e) {}
+      style: primary
+      start: 49
+      end: 73
+    - source: '{}'
+      style: secondary
+      start: 71
+      end: 73

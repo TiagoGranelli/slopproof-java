@@ -1,0 +1,23 @@
+id: no-lombok
+valid:
+  - |
+    import java.util.List;
+
+    record Post(String id, String title) {}
+invalid:
+  - |
+    import lombok.Data;
+
+    @Data
+    class Post {
+      String id;
+    }
+  - |
+    import static lombok.AccessLevel.PRIVATE;
+
+    class Post {}
+  - |
+    @lombok.Value
+    class Post {
+      String id;
+    }

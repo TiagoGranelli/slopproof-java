@@ -1,0 +1,41 @@
+id: no-optional-field-or-parameter
+snapshots:
+  ? |
+    class Posts {
+      Post find(Optional<String> cursor) { return null; }
+    }
+  : labels:
+    - source: Optional<String> cursor
+      style: primary
+      start: 26
+      end: 49
+    - source: Optional<String>
+      style: secondary
+      start: 26
+      end: 42
+  ? |
+    class Posts {
+      private Optional<String> title;
+    }
+  : labels:
+    - source: private Optional<String> title;
+      style: primary
+      start: 16
+      end: 47
+    - source: Optional<String>
+      style: secondary
+      start: 24
+      end: 40
+  ? |
+    class Posts {
+      private java.util.Optional<String> title;
+    }
+  : labels:
+    - source: private java.util.Optional<String> title;
+      style: primary
+      start: 16
+      end: 57
+    - source: java.util.Optional<String>
+      style: secondary
+      start: 24
+      end: 50

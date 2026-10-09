@@ -1,0 +1,52 @@
+# Gate: request input (@RequestParam, @PathVariable, @RequestBody) reaching the SQL text of a JDBC,
+# JdbcTemplate or jOOQ plain-SQL call. Only the SQL argument is the sink, so bind values are allowed.
+# Run: opengrep scan --config config/opengrep --error --taint-intrafile --disable-version-check src/main/java
+# Test: opengrep test --taint-intrafile config/opengrep/rules (the .java beside a rule marks findings with ruleid: and clean lines with ok:)
+rules:
+  - id: sql-injection-request-input
+    languages: [java]
+    severity: ERROR
+    message: >-
+      Request input reaches a SQL string. A value joined into the SQL text changes the query. Bind it: use
+      PreparedStatement.setXxx, JdbcTemplate with ? arguments, or DSL.sql("... {0}", value) in jOOQ.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @RequestParam $TYPE $ARG, ...) { ... }
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @PathVariable $TYPE $ARG, ...) { ... }
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @RequestBody $TYPE $ARG, ...) { ... }
+    pattern-sinks:
+      # Only the SQL text matters: a tainted bind value is what the placeholder is for.
+      - patterns:
+          - pattern: $STATEMENT.execute($SQL, ...)
+          - focus-metavariable: $SQL
+      - patterns:
+          - pattern: $STATEMENT.executeQuery($SQL, ...)
+          - focus-metavariable: $SQL
+      - patterns:
+          - pattern: $STATEMENT.executeUpdate($SQL, ...)
+          - focus-metavariable: $SQL
+      - patterns:
+          - pattern: $TEMPLATE.query($SQL, ...)
+          - focus-metavariable: $SQL
+      - patterns:
+          - pattern: $TEMPLATE.update($SQL, ...)
+          - focus-metavariable: $SQL
+      - patterns:
+          - pattern: DSL.sql($SQL, ...)
+          - focus-metavariable: $SQL
+      - patterns:
+          - pattern: DSL.sql($SQL)
+          - focus-metavariable: $SQL
+    metadata:
+      cwe:
+        - "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+      category: security

@@ -1,0 +1,18 @@
+id: no-optional-field-or-parameter
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  Optional as a field or a parameter adds a third state to a value that is either there or not, and callers
+  must wrap it. Use a nullable parameter with @Nullable, or an overload, and keep Optional for return types.
+rule:
+  any:
+    - kind: field_declaration
+      has:
+        field: type
+        regex: '^(java\.util\.)?Optional(Int|Long|Double)?(<|$)'
+    - kind: formal_parameter
+      has:
+        field: type
+        regex: '^(java\.util\.)?Optional(Int|Long|Double)?(<|$)'

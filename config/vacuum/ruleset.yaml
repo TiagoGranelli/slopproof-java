@@ -1,0 +1,106 @@
+# Contract gate: vacuum lints api/openapi.yaml, the source of the generated server interfaces and the SDK.
+# Start from spectral:oas recommended, then add the rules that keep the contract usable by generated code,
+# by clients and by the error model. The custom rules are errors. Run with --fail-severity warn so a
+# spectral warning fails the gate too: a warning that nobody reads is not a gate.
+extends: [[spectral:oas, recommended]]
+rules:
+  # The current contract does not carry examples or descriptions on every schema, parameter and body.
+  # Tests check each response against the schema, so these would duplicate it; enabling them needs a spec change.
+  oas3-missing-example: off
+  component-description: off
+  oas3-parameter-description: off
+  operation-description: off
+
+  operation-operation-id-defined:
+    description: Every operation needs an operationId, which becomes the generated server method and SDK call.
+    severity: error
+    given: "$.paths[*][get,put,post,delete,patch,head,options,trace]"
+    then:
+      field: operationId
+      function: defined
+
+  operation-operation-id-camel-case:
+    description: operationId must be camelCase, like listPosts, not list_posts or ListPosts.
+    severity: error
+    given: "$.paths[*][get,put,post,delete,patch,head,options,trace]"
+    then:
+      field: operationId
+      function: pattern
+      functionOptions:
+        match: "^[a-z][a-zA-Z0-9]*$"
+
+  error-response-has-content:
+    description: A 4xx or 5xx response must have a body, a problem+json object describing the error.
+    severity: error
+    given: "$.paths[*][*].responses[?(@property.match(/^[45]/))]"
+    then:
+      field: content
+      function: defined
+
+  error-response-is-problem-json:
+    description: A 4xx or 5xx response must use application/problem+json only, not another media type.
+    severity: error
+    given: "$.paths[*][*].responses[?(@property.match(/^[45]/))].content[*]~"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^application/problem\\+json$"
+
+  path-param-format-defined:
+    description: A path parameter must declare its schema format; ids are uuid.
+    severity: error
+    given: "$.paths[*]..parameters[?(@.in == 'path')].schema"
+    then:
+      field: format
+      function: defined
+
+  path-param-is-uuid:
+    description: A path parameter must have format uuid, so a malformed id is rejected before it reaches the database.
+    severity: error
+    given: "$.paths[*]..parameters[?(@.in == 'path')].schema"
+    then:
+      field: format
+      function: pattern
+      functionOptions:
+        match: "^uuid$"
+
+  no-additional-properties-true:
+    description: additionalProperties true (or a bare schema) accepts any key; declare additionalProperties false so unknown fields are rejected. This contract has no maps, so a typed map needs a reviewed exception.
+    severity: error
+    given: "$..additionalProperties"
+    then:
+      function: falsy
+
+  object-schema-declares-required:
+    description: A component object schema must list its required properties, so generated types do not make every field optional.
+    severity: error
+    given: "$.components.schemas[?(@.type == 'object')]"
+    then:
+      field: required
+      function: defined
+
+  # Scoped to input: a request string is what a client can make unbounded. Response strings are written by the
+  # server; nextCursor and the Problem fields declare no maxLength today, which is a spec choice, not a gate failure.
+  request-string-has-max-length:
+    description: A string in a request body must declare maxLength, so an oversized value is rejected by the contract.
+    severity: error
+    given: "$.paths[*][*].requestBody.content[*].schema.properties[?(@.type == 'string')]"
+    then:
+      field: maxLength
+      function: defined
+
+  query-string-has-max-length:
+    description: A string query parameter must declare maxLength, so an oversized value is rejected by the contract.
+    severity: error
+    given: "$.paths[*]..parameters[?(@.in == 'query' && @.schema.type == 'string')].schema"
+    then:
+      field: maxLength
+      function: defined
+
+  array-has-max-items:
+    description: An array must declare maxItems, so a response or request cannot grow without limit.
+    severity: error
+    given: "$..[?(@.type == 'array')]"
+    then:
+      field: maxItems
+      function: defined

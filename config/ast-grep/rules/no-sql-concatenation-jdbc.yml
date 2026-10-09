@@ -1,0 +1,23 @@
+id: no-sql-concatenation-jdbc
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  SQL built by string concatenation lets input change the query. Use a PreparedStatement with ? placeholders
+  and setXxx(...), or JdbcTemplate with ? arguments: query(sql, mapper, value).
+rule:
+  any:
+    - pattern: $STATEMENT.execute($$$ARGS)
+    - pattern: $STATEMENT.executeQuery($$$ARGS)
+    - pattern: $STATEMENT.executeUpdate($$$ARGS)
+    - pattern: $STATEMENT.executeLargeUpdate($$$ARGS)
+    - pattern: $TEMPLATE.query($$$ARGS)
+    - pattern: $TEMPLATE.update($$$ARGS)
+    - pattern: $CONNECTION.prepareStatement($$$ARGS)
+    - pattern: $ENTITY_MANAGER.createNativeQuery($$$ARGS)
+    - pattern: $ENTITY_MANAGER.createQuery($$$ARGS)
+  has:
+    kind: binary_expression
+    regex: '"'
+    stopBy: end

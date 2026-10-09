@@ -1,0 +1,39 @@
+id: no-broad-catch
+valid:
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { log.error("load failed", e); }
+      }
+    }
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (RuntimeException e) { throw new PostException("load failed", e); }
+      }
+    }
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (Exception e) { throw e; }
+      }
+    }
+invalid:
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (Exception e) { log.error("load failed", e); }
+      }
+    }
+  - |
+    class Posts {
+      Post run() {
+        try { return load(); } catch (RuntimeException e) { return null; }
+      }
+    }
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (Throwable t) { log.warn("ignored", t); }
+      }
+    }

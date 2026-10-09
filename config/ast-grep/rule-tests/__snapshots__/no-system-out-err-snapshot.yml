@@ -1,0 +1,20 @@
+id: no-system-out-err
+snapshots:
+  ? |
+    class Posts {
+      void run() { System.err.println("failed"); }
+    }
+  : labels:
+    - source: System.err
+      style: primary
+      start: 29
+      end: 39
+  ? |
+    class Posts {
+      void run() { System.out.println("started"); }
+    }
+  : labels:
+    - source: System.out
+      style: primary
+      start: 29
+      end: 39

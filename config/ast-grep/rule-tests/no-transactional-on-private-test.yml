@@ -1,0 +1,19 @@
+id: no-transactional-on-private
+valid:
+  - |
+    class PostService {
+      @Transactional
+      public void publish() { save(); }
+      private void save() {}
+    }
+invalid:
+  - |
+    class PostService {
+      @Transactional
+      private void publish() { save(); }
+    }
+  - |
+    class PostService {
+      @Transactional(readOnly = true)
+      private List<Post> all() { return load(); }
+    }

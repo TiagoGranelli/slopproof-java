@@ -1,0 +1,25 @@
+id: no-optional-get
+valid:
+  - |
+    class Posts {
+      Post find(String id) {
+        return repository.findById(id).orElseThrow(() -> new PostNotFound(id));
+      }
+    }
+  - |
+    class Posts {
+      String read(Holder holder) { return holder.get(); }
+    }
+invalid:
+  - |
+    class Posts {
+      String read() { return Optional.of("x").get(); }
+    }
+  - |
+    class Posts {
+      Post find(String id) { return repository.findById(id).get(); }
+    }
+  - |
+    class Posts {
+      String read(Optional<String> optional) { return optional.get(); }
+    }

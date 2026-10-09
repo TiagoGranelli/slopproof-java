@@ -1,0 +1,63 @@
+id: no-field-injection
+snapshots:
+  ? |
+    class Posts {
+      @Autowired
+      private PostRepository repository;
+    }
+  : labels:
+    - source: |-
+        @Autowired
+          private PostRepository repository;
+      style: primary
+      start: 16
+      end: 63
+    - source: '@Autowired'
+      style: secondary
+      start: 16
+      end: 26
+    - source: |-
+        @Autowired
+          private
+      style: secondary
+      start: 16
+      end: 36
+  ? |
+    class Posts {
+      @Autowired private PostRepository repository;
+    }
+  : labels:
+    - source: '@Autowired private PostRepository repository;'
+      style: primary
+      start: 16
+      end: 61
+    - source: '@Autowired'
+      style: secondary
+      start: 16
+      end: 26
+    - source: '@Autowired private'
+      style: secondary
+      start: 16
+      end: 34
+  ? |
+    class Posts {
+      @org.springframework.beans.factory.annotation.Autowired
+      private PostRepository repository;
+    }
+  : labels:
+    - source: |-
+        @org.springframework.beans.factory.annotation.Autowired
+          private PostRepository repository;
+      style: primary
+      start: 16
+      end: 108
+    - source: '@org.springframework.beans.factory.annotation.Autowired'
+      style: secondary
+      start: 16
+      end: 71
+    - source: |-
+        @org.springframework.beans.factory.annotation.Autowired
+          private
+      style: secondary
+      start: 16
+      end: 81
