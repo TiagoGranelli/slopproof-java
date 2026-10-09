@@ -39,6 +39,7 @@ private fun extractTarGz(archive: File, entry: String, target: File): Boolean =
         val header = ByteArray(TAR_BLOCK)
         while (readHeader(tar, header)) {
             val size = octal(header, 124, 12)
+            check(size >= 0) { "slopproof: ${archive.name} has a negative entry size; the archive is malformed" }
             if (isRegularFile(header) && tarName(header) == entry) {
                 copyExactly(tar, target, size)
                 return true
@@ -56,8 +57,12 @@ private fun readHeader(tar: InputStream, header: ByteArray): Boolean {
 
 private fun isRegularFile(header: ByteArray): Boolean = header[156] == '0'.code.toByte() || header[156] == 0.toByte()
 
-private fun tarName(header: ByteArray): String =
-    String(header, 0, 100, StandardCharsets.UTF_8).substringBefore('\u0000').removePrefix("./")
+/** The full path: the ustar prefix field (offset 345) joined to the name field, so `x/vacuum` never matches `vacuum`. */
+private fun tarName(header: ByteArray): String {
+    val name = String(header, 0, 100, StandardCharsets.UTF_8).substringBefore('\u0000')
+    val prefix = String(header, 345, 155, StandardCharsets.UTF_8).substringBefore('\u0000')
+    return (if (prefix.isEmpty()) name else "$prefix/$name").removePrefix("./")
+}
 
 private fun octal(header: ByteArray, offset: Int, length: Int): Long {
     val digits = String(header, offset, length, StandardCharsets.US_ASCII).trim { it <= ' ' }

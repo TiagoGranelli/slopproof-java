@@ -37,15 +37,26 @@ internal class ToolInstaller(
     private val logger: Logger,
     private val downloader: ToolDownloader = ToolDownloader(),
 ) {
-    /** Returns the installed executable, downloading it first when it is not in [root] yet. */
+    /** Returns the installed executable, downloading it first when it is not in [root] yet or no longer matches. */
     fun install(release: ToolRelease): File {
         val dir = root.resolve("${release.name}/${release.version}/${release.platform}")
         val executable = dir.resolve("bin/${executableName(release.name, release.platform)}")
-        if (dir.resolve(COMPLETE_MARKER).isFile) return executable
+        if (isVerified(release, dir, executable)) return executable
         return underLock {
-            if (!dir.resolve(COMPLETE_MARKER).isFile) fetch(release, dir, executable)
+            if (!isVerified(release, dir, executable)) fetch(release, dir, executable)
             executable
         }
+    }
+
+    /**
+     * Reuses an install only while the pinned SHA-256 is the one it was fetched under and the executable still
+     * hashes to what was recorded. Without the second check, a replaced binary would run unnoticed.
+     */
+    private fun isVerified(release: ToolRelease, dir: File, executable: File): Boolean {
+        val marker = dir.resolve(COMPLETE_MARKER)
+        if (!marker.isFile || !executable.isFile) return false
+        val recorded = marker.readLines()
+        return recorded.size == 2 && recorded[0] == release.sha256 && recorded[1] == sha256Of(executable)
     }
 
     private fun fetch(release: ToolRelease, dir: File, executable: File) {
@@ -59,9 +70,10 @@ internal class ToolInstaller(
             logger.lifecycle("slopproof: fetching ${release.name} ${release.version} (${release.platform})")
             downloader.download(url, archive, "${release.name} ${release.version} (${release.platform})")
             verifyChecksum(release, archive)
-            materialize(release, archive, staging.resolve("bin/${executableName(release.name, release.platform)}"))
+            val staged = staging.resolve("bin/${executableName(release.name, release.platform)}")
+            materialize(release, archive, staged)
             archive.delete()
-            staging.resolve(COMPLETE_MARKER).writeText(release.url + "\n")
+            staging.resolve(COMPLETE_MARKER).writeText("${release.sha256}\n${sha256Of(staged)}\n")
             dir.deleteRecursively()
             Files.move(staging.toPath(), dir.toPath())
         } finally {

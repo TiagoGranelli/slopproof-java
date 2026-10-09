@@ -18,7 +18,10 @@ internal fun parseTomlTables(text: String, source: String): Map<String, Map<Stri
         val where = "$source:${index + 1}"
         if (line.isEmpty() || line.startsWith("#")) return@forEachIndexed
         if (line.startsWith("[")) {
-            current = tables.getOrPut(tableName(line, where)) { linkedMapOf() }
+            val name = tableName(line, where)
+            // A second [header] would reopen the table and quietly add keys to a pinned asset.
+            if (name in tables) throw GradleException("$where: table [$name] is defined twice")
+            current = tables.getOrPut(name) { linkedMapOf() }
             return@forEachIndexed
         }
         val (key, value) = keyValue(line, where)

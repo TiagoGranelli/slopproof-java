@@ -96,7 +96,8 @@ abstract class NativeToolTask : DefaultTask() {
             return
         }
         when (val gate = plan()) {
-            is GatePlan.Skip -> logger.lifecycle("slopproof: ${toolName.get()} skipped: ${gate.reason}")
+            // A warning, not a lifecycle line: a gate that checked nothing must not look like a pass.
+            is GatePlan.Skip -> logger.warn("slopproof: ${toolName.get()} NOT RUN: ${gate.reason}")
             is GatePlan.Run -> execute(gate.arguments)
         }
         writeMarker()
