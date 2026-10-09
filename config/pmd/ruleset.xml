@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--
+  A short PMD rule set, not the quickstart: each rule here catches a shape that agents write and reviewers
+  miss. Formatting, naming and size are Checkstyle's and google-java-format's jobs.
+-->
+<ruleset name="slopproof"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>Rules that fail the build for slop: unused code, swallowed errors and tangled control flow.</description>
+
+  <rule ref="category/java/bestpractices.xml/UnusedAssignment"/>
+  <rule ref="category/java/bestpractices.xml/UnusedFormalParameter"/>
+  <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
+  <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/>
+
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
+  <rule ref="category/java/errorprone.xml/AvoidCatchingGenericException"/>
+
+  <rule ref="category/java/design.xml/SimplifyBooleanReturns"/>
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="15"/>
+    </properties>
+  </rule>
+</ruleset>
