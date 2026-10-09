@@ -108,7 +108,21 @@ val astGrepTest =
 
 val opengrepScan =
     gate("opengrepScan", NativeToolTask::class.java, "opengrep") {
-        arguments.set(listOf("scan", "--config", "config/opengrep", "--error", "--disable-version-check", "src/main/java"))
+        arguments.set(
+            listOf(
+                "scan",
+                "--config",
+                "config/opengrep",
+                "--error",
+                "--disable-version-check",
+                // Follows a request value through helper methods in the same file; without it a source
+                // and a sink in different methods are never connected.
+                "--taint-intrafile",
+                // Scans files git does not track yet, so a new class fails before it is staged.
+                "--no-git-ignore",
+                "src/main/java",
+            ),
+        )
         scannedFiles.from(root.dir("config/opengrep"), root.dir("src/main/java"))
     }
 

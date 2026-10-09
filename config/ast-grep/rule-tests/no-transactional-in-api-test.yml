@@ -3,6 +3,7 @@ valid:
   - |
     package com.example.slopproof.posts;
 
+    @Service
     class PostService {
       @Transactional
       public void publish() {}
@@ -10,21 +11,32 @@ valid:
   - |
     package com.example.slopproof.posts;
 
-    class PostController {
+    @RestController
+    class PostsController {
       public void create() {}
     }
 invalid:
   - |
-    package com.example.slopproof.api;
+    package com.example.slopproof.posts;
 
     @Transactional
-    class PostController {
+    @RestController
+    class PostsController {
       public void create() {}
     }
   - |
-    package com.example.slopproof.api.v1;
+    package com.example.slopproof.posts;
 
-    class PostController {
+    @RestController
+    class PostsController {
       @Transactional(readOnly = true)
       public void list() {}
+    }
+  - |
+    package com.example.slopproof.web;
+
+    @Controller
+    class PageController {
+      @Transactional
+      public String show() { return "page"; }
     }

@@ -4,17 +4,23 @@ ignores:
   - config/opengrep/**
 severity: error
 message: >-
-  Controllers in an api package must not open transactions. Move the unit of work into a service method
-  annotated @Transactional, and let the controller only map the request and the response.
+  Controllers must not open transactions. Move the unit of work into a service method annotated
+  @Transactional, and let the controller only map the request and the response.
 rule:
   any:
     - kind: marker_annotation
       regex: '^@Transactional\b'
     - kind: annotation
       regex: '^@Transactional\b'
+  # A controller is any class annotated @RestController or @Controller, in whatever package it lives.
   inside:
-    kind: program
+    kind: class_declaration
     stopBy: end
     has:
-      kind: package_declaration
-      regex: '^package\s+([\w.]+\.)?api(\.[\w.]+)?\s*;'
+      kind: modifiers
+      has:
+        any:
+          - kind: marker_annotation
+            regex: '^@(Rest)?Controller\b'
+          - kind: annotation
+            regex: '^@(Rest)?Controller\b'

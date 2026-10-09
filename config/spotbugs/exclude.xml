@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   SpotBugs skips generated code only: the openapi-generator interfaces and DTOs (api) and the jOOQ tables
-  (db). Hand-written code in these packages is not exempt by package; move it out if it needs the check.
+  (db). The match is by package, so hand-written code placed in these packages would be exempt too: never put any there.
 -->
 <FindBugsFilter>
   <Match>

@@ -52,3 +52,95 @@ snapshots:
       style: secondary
       start: 0
       end: 102
+  ? |
+    package com.example.slopproof.posts;
+
+    @RestController
+    class PostsController {
+      @Transactional(readOnly = true)
+      public void list() {}
+    }
+  : labels:
+    - source: '@Transactional(readOnly = true)'
+      style: primary
+      start: 80
+      end: 111
+    - source: '@RestController'
+      style: secondary
+      start: 38
+      end: 53
+    - source: '@RestController'
+      style: secondary
+      start: 38
+      end: 53
+    - source: |-
+        @RestController
+        class PostsController {
+          @Transactional(readOnly = true)
+          public void list() {}
+        }
+      style: secondary
+      start: 38
+      end: 137
+  ? |
+    package com.example.slopproof.posts;
+
+    @Transactional
+    @RestController
+    class PostsController {
+      public void create() {}
+    }
+  : labels:
+    - source: '@Transactional'
+      style: primary
+      start: 38
+      end: 52
+    - source: '@RestController'
+      style: secondary
+      start: 53
+      end: 68
+    - source: |-
+        @Transactional
+        @RestController
+      style: secondary
+      start: 38
+      end: 68
+    - source: |-
+        @Transactional
+        @RestController
+        class PostsController {
+          public void create() {}
+        }
+      style: secondary
+      start: 38
+      end: 120
+  ? |
+    package com.example.slopproof.web;
+
+    @Controller
+    class PageController {
+      @Transactional
+      public String show() { return "page"; }
+    }
+  : labels:
+    - source: '@Transactional'
+      style: primary
+      start: 73
+      end: 87
+    - source: '@Controller'
+      style: secondary
+      start: 36
+      end: 47
+    - source: '@Controller'
+      style: secondary
+      start: 36
+      end: 47
+    - source: |-
+        @Controller
+        class PageController {
+          @Transactional
+          public String show() { return "page"; }
+        }
+      style: secondary
+      start: 36
+      end: 131
