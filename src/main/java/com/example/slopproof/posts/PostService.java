@@ -18,6 +18,13 @@ public class PostService {
   // symbols.
   private static final Set<Integer> BLANK_FILLERS = Set.of(0x115F, 0x1160, 0x2800, 0x3164, 0xFFA0);
 
+  // Tab, line feed and carriage return are the controls a body can hold on purpose.
+  private static final Set<Integer> LINE_LAYOUT = Set.of(0x09, 0x0A, 0x0D);
+
+  // The embedding, override and isolate controls, which reorder the text after them.
+  private static final Set<Integer> BIDI_CONTROLS =
+      Set.of(0x202A, 0x202B, 0x202C, 0x202D, 0x202E, 0x2066, 0x2067, 0x2068, 0x2069);
+
   private final PostRepository repository;
 
   @SuppressFBWarnings(
@@ -72,7 +79,8 @@ public class PostService {
     }
     if (value.codePoints().anyMatch(PostService::isRefused)) {
       throw new InvalidPostException(
-          "%s must not contain control or unpaired surrogate characters".formatted(field));
+          "%s must not contain control, unassigned, private-use, bidi or unpaired surrogate characters"
+              .formatted(field));
     }
   }
 
@@ -88,9 +96,16 @@ public class PostService {
 
   // Postgres refuses NUL, a lone surrogate would be stored as '?' without an error, and other
   // controls, such as an escape sequence, rewrite the terminal of whoever reads the post.
+  // Unassigned
+  // and private-use code points draw as boxes or as nothing, and a bidi override reorders the text
+  // around it, so the title on screen can differ from the one stored.
   private static boolean isRefused(int codePoint) {
-    boolean control = Character.getType(codePoint) == Character.CONTROL;
-    boolean lineLayout = codePoint == '\t' || codePoint == '\n' || codePoint == '\r';
-    return (control && !lineLayout) || Character.getType(codePoint) == Character.SURROGATE;
+    int type = Character.getType(codePoint);
+    boolean control = type == Character.CONTROL && !LINE_LAYOUT.contains(codePoint);
+    boolean unusable =
+        type == Character.UNASSIGNED
+            || type == Character.PRIVATE_USE
+            || type == Character.SURROGATE;
+    return control || unusable || BIDI_CONTROLS.contains(codePoint);
   }
 }

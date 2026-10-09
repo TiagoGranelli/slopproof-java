@@ -28,6 +28,9 @@ class PostInputTest {
 
   private static final String POSTS = "/api/posts";
 
+  private static final String CHARACTERS_REFUSED =
+      "%s must not contain control, unassigned, private-use, bidi or unpaired surrogate characters";
+
   private final MockMvc mvc;
 
   @Autowired
@@ -39,14 +42,23 @@ class PostInputTest {
   void refusesControlsAndLoneSurrogatesInText() throws Exception {
     // The JSON escapes these, so the database never sees a raw NUL, escape or lone surrogate.
     refused("{\"title\":\"a\\u0000b\",\"body\":\"x\"}")
-        .andExpect(
-            jsonPath("$.detail")
-                .value("title must not contain control or unpaired surrogate characters"));
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
     refused("{\"title\":\"x\",\"body\":\"\\ud800\"}")
-        .andExpect(
-            jsonPath("$.detail")
-                .value("body must not contain control or unpaired surrogate characters"));
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("body")));
     refused("{\"title\":\"x\",\"body\":\"\\u001b[2J\"}");
+  }
+
+  @Test
+  void refusesUnassignedPrivateUseAndBidiCharacters() throws Exception {
+    // U+E0080 is unassigned and default-ignorable, so it draws nothing and dodges the blank check.
+    refused("{\"title\":\"\\udb40\\udc80\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    refused("{\"title\":\"a\\ue000\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    // A right-to-left override reorders the text after it, so the title on screen differs from the
+    // stored one.
+    refused("{\"title\":\"a\\u202eb\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
   }
 
   @Test

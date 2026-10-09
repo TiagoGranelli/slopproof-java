@@ -30,6 +30,11 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 public class ProblemHandling extends ResponseEntityExceptionHandler {
 
+  // Tomcat raises one exception for a value that is not text and for too many parameters, so the
+  // detail names both. Public so the test checks the text without copying it.
+  public static final String UNDECODABLE_QUERY_DETAIL =
+      "the query string cannot be read: a value is not text, or there are too many parameters";
+
   private static final Logger log = LoggerFactory.getLogger(ProblemHandling.class);
 
   @Override
@@ -78,10 +83,7 @@ public class ProblemHandling extends ResponseEntityExceptionHandler {
    */
   @ExceptionHandler(InvalidParameterException.class)
   public ResponseEntity<Object> handleUndecodableParameter() {
-    return problemResponse(
-        HttpStatus.BAD_REQUEST,
-        HttpHeaders.EMPTY,
-        "a query parameter holds a value that cannot be read as text");
+    return problemResponse(HttpStatus.BAD_REQUEST, HttpHeaders.EMPTY, UNDECODABLE_QUERY_DETAIL);
   }
 
   /**
