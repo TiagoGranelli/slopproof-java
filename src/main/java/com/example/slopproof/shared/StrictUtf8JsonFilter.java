@@ -25,14 +25,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * Refuses a JSON body that is not strict UTF-8 before anything parses it. Jackson reads the
  * overlong encoding C0 BC as '&lt;', while a proxy in front of the app sees two invalid bytes, so
  * the two would read one body two ways. A raw NUL is refused too: JSON text never holds one, and
- * UTF-16 JSON does. The body is held whole, so the read stops one byte past the document limit.
+ * UTF-16 JSON does. A declared charset other than UTF-8 is refused for the same reason: Jackson
+ * would read the bytes under that charset. The body is held whole, so the read stops one byte past
+ * the document limit.
  */
 @Component
 public class StrictUtf8JsonFilter extends OncePerRequestFilter {
 
   /** The detail of the refusal, which a test checks without copying the text. */
   public static final String REFUSED_DETAIL =
-      "the body must be strict UTF-8 JSON with no NUL byte, and within the size limit";
+      "the body must be strict UTF-8 JSON, with any declared charset UTF-8, with no NUL byte, "
+          + "and within the size limit";
 
   private static final String REFUSED_BODY =
       "{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"status\":400,\"detail\":\""
@@ -43,23 +46,39 @@ public class StrictUtf8JsonFilter extends OncePerRequestFilter {
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
-    if (!isJson(request)) {
+    String contentType = request.getContentType();
+    if (contentType == null || !isJson(contentType)) {
       chain.doFilter(request, response);
       return;
     }
     int readLimit = (int) JsonInputConfiguration.MAX_DOCUMENT_LENGTH + 1;
     byte[] body = request.getInputStream().readNBytes(readLimit);
-    if (body.length > JsonInputConfiguration.MAX_DOCUMENT_LENGTH || !isStrictJson(body)) {
+    if (body.length > JsonInputConfiguration.MAX_DOCUMENT_LENGTH
+        || !isStrictJson(body)
+        || !declaresUtf8(contentType)) {
       refuse(response);
       return;
     }
     chain.doFilter(new BufferedBodyRequest(request, body), response);
   }
 
-  private static boolean isJson(HttpServletRequest request) {
-    String contentType = request.getContentType();
-    return contentType != null
-        && contentType.toLowerCase(Locale.ROOT).startsWith(MediaType.APPLICATION_JSON_VALUE);
+  private static boolean isJson(String contentType) {
+    return contentType.toLowerCase(Locale.ROOT).startsWith(MediaType.APPLICATION_JSON_VALUE);
+  }
+
+  // Only UTF-8 may be named, and at most once: a repeated charset is read as the last one.
+  private static boolean declaresUtf8(String contentType) {
+    String normalised = contentType.toLowerCase(Locale.ROOT).replaceAll("[\\s\"]", "");
+    int charsets = occurrences(normalised, "charset");
+    return charsets == 0 || (charsets == 1 && occurrences(normalised, "charset=utf-8") == 1);
+  }
+
+  private static int occurrences(String text, String part) {
+    int count = 0;
+    for (int at = text.indexOf(part); at >= 0; at = text.indexOf(part, at + part.length())) {
+      count++;
+    }
+    return count;
   }
 
   // The decoder rejects overlong forms, surrogates and code points past U+10FFFF, as RFC 3629 does.

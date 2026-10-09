@@ -69,6 +69,28 @@ class PostInputTest {
   }
 
   @Test
+  void refusesInvisibleCharactersBetweenVisibleOnes() throws Exception {
+    // Each of these draws nothing, so it could carry a bit of hidden text between two letters.
+    refused("{\"title\":\"a\\u200bb\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    refused("{\"title\":\"a\\u200cb\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    refused("{\"title\":\"a\\u00adb\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    refused("{\"title\":\"a\\u180bb\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    refused("{\"title\":\"a\\u2061b\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+  }
+
+  @Test
+  void refusesAJoinerOutsideAnEmojiSequence() throws Exception {
+    // A zero-width joiner joins two emoji and nothing else.
+    refused("{\"title\":\"a\\u200db\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+  }
+
+  @Test
   void refusesMisplacedOrRepeatedSelectors() throws Exception {
     // A non-emoji selector hides data, whatever it follows.
     refused("{\"title\":\"a\\ufe00\",\"body\":\"x\"}")
@@ -93,6 +115,25 @@ class PostInputTest {
             post(POSTS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"\\u2764\\ufe0f\",\"body\":\"x\"}"))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
+  void acceptsEmojiJoinedByJoiners() throws Exception {
+    // A family (man, woman, girl) and a rainbow flag, which joins a selector-marked flag to a
+    // rainbow.
+    mvc.perform(
+            post(POSTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"\\ud83d\\udc68\\u200d\\ud83d\\udc69\\u200d\\ud83d\\udc67\","
+                        + "\"body\":\"x\"}"))
+        .andExpect(status().isCreated());
+    mvc.perform(
+            post(POSTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"\\ud83c\\udff3\\ufe0f\\u200d\\ud83c\\udf08\",\"body\":\"x\"}"))
         .andExpect(status().isCreated());
   }
 
@@ -136,6 +177,28 @@ class PostInputTest {
   }
 
   @Test
+  void refusesDeclaredCharsetsOtherThanUtf8() throws Exception {
+    // Under Shift_JIS a backslash can be the second byte of a character, so an escape can change.
+    byte[] json = "{\"title\":\"a\",\"body\":\"x\"}".getBytes(StandardCharsets.UTF_8);
+    refusedAs("application/json; charset=Shift_JIS", json)
+        .andExpect(jsonPath("$.detail").value(StrictUtf8JsonFilter.REFUSED_DETAIL));
+    refusedAs("application/json; charset=ISO-8859-1", json)
+        .andExpect(jsonPath("$.detail").value(StrictUtf8JsonFilter.REFUSED_DETAIL));
+    // A repeated charset is read as the last one, so it is refused even when the first is UTF-8.
+    refusedAs("application/json; charset=utf-8; charset=Shift_JIS", json)
+        .andExpect(jsonPath("$.detail").value(StrictUtf8JsonFilter.REFUSED_DETAIL));
+  }
+
+  @Test
+  void acceptsUtf8DeclaredAsCharset() throws Exception {
+    mvc.perform(
+            post(POSTS)
+                .contentType("application/json; charset=UTF-8")
+                .content("{\"title\":\"a\",\"body\":\"x\"}"))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
   void refusesPropertiesTheContractDoesNotName() throws Exception {
     refused("{\"title\":\"a\",\"body\":\"b\",\"id\":\"00000000-0000-0000-0000-000000000000\"}");
   }
@@ -170,7 +233,11 @@ class PostInputTest {
   }
 
   private ResultActions refused(byte[] json) throws Exception {
-    return mvc.perform(post(POSTS).contentType(MediaType.APPLICATION_JSON).content(json))
+    return refusedAs(MediaType.APPLICATION_JSON_VALUE, json);
+  }
+
+  private ResultActions refusedAs(String contentType, byte[] json) throws Exception {
+    return mvc.perform(post(POSTS).contentType(contentType).content(json))
         .andExpect(status().isBadRequest())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
   }
