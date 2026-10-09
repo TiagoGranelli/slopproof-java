@@ -23,8 +23,9 @@ import tools.jackson.databind.type.LogicalType;
 @Configuration(proxyBeanMethods = false)
 public class JsonInputConfiguration {
 
-  // The longest text the contract accepts is a post body, at 10000 characters.
-  public static final int MAX_STRING_LENGTH = 10_000;
+  // Jackson counts UTF-16 units, and the contract's 10000-character body can be 20000 units of
+  // emoji. The contract's own maxLength still applies after this bound.
+  public static final int MAX_STRING_LENGTH = 20_000;
 
   // A post body escaped character by character is at most 6 bytes a character, plus its title.
   public static final long MAX_DOCUMENT_LENGTH = 256L * 1024;

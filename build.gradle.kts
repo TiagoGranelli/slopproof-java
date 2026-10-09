@@ -27,6 +27,8 @@ dependencies {
     // The SuppressFBWarnings annotation for the constructor-injection suppressions in posts. Same version as the
     // SpotBugs tool in the catalog; it is not shipped in the jar.
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.10.4")
+    // Test code compiles against the main classes, whose annotations must resolve, or javac warns under -Werror.
+    configurations.named("testCompileOnly") { extendsFrom(configurations.getByName("compileOnly")) }
 
     testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
     testImplementation("org.springframework.boot:spring-boot-starter-test")

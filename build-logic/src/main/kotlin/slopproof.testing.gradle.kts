@@ -16,6 +16,7 @@ dependencies {
     testImplementation(libs.findLibrary("jqwik").get())
     testImplementation(libs.findLibrary("archunit-junit5").get())
     testImplementation(libs.findLibrary("swagger-request-validator-mockmvc").get())
+    testImplementation(libs.findLibrary("swagger-parser").get())
     testImplementation(libs.findLibrary("embedded-postgres").get())
     // embedded-postgres brings one binaries artifact per platform and picks the host's at runtime; the BOM
     // pins them all to PostgreSQL 18. Apple Silicon is not among its defaults.
@@ -48,13 +49,25 @@ val generatedAndEntryPoint =
         "com/example/slopproof/SlopproofApplication.class",
     )
 
+// Where the API tests record the documented responses they reach. Each test JVM writes its own file, and the
+// contractCoverage task reads them all, so the directory is shared by every fork of a run.
+val contractHitsDirectory = layout.buildDirectory.dir("contract-hits")
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     inputs.files(mockitoAgent).withPropertyName("mockitoAgent")
-    // A local copy, so the lambda below captures the provider and not the script, which the configuration
-    // cache cannot serialize.
+    // Local copies, so the lambda below captures the providers and not the script, which the configuration
+    // cache cannot serialize. A Provider passed to systemProperty would reach the JVM as its toString.
     val agentArgument = mockitoAgentArgument
-    jvmArgumentProviders.add(CommandLineArgumentProvider { listOf(agentArgument.get()) })
+    val hitsDirectory = contractHitsDirectory
+    jvmArgumentProviders.add(
+        CommandLineArgumentProvider {
+            listOf(
+                agentArgument.get(),
+                "-Dslopproof.contractHits=${hitsDirectory.get().asFile.absolutePath}",
+            )
+        },
+    )
     // Half the cores: each fork starts its own embedded Postgres, which is heavy on a laptop.
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     // Fails when test classes exist but JUnit finds none, e.g. a class that uses JUnit 4 annotations. With no
@@ -88,9 +101,6 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
     classDirectories.setFrom(coveredClasses)
-    // No test run leaves no execution data. Skip then, rather than fail an empty skeleton: there is nothing
-    // to measure, and a run that did execute tests still has its data here and is checked.
-    onlyIf("no JaCoCo execution data, so no tests ran") { executionData.files.any { it.exists() } }
     violationRules {
         rule {
             element = "BUNDLE"
@@ -108,10 +118,48 @@ tasks.jacocoTestCoverageVerification {
 
 tasks.test {
     finalizedBy(tasks.jacocoTestReport)
+    // Each run starts without hits, so a file from an earlier run cannot satisfy the contract gate. The local
+    // copy keeps the lambda from capturing the script, as in the test defaults above.
+    val hitsDirectory = contractHitsDirectory
+    doFirst { hitsDirectory.get().asFile.deleteRecursively() }
+    filter { excludeTestsMatching("*ContractCoverageTest") }
 }
 
+// Fails when an operation or a documented status of api/openapi.yaml is reached by no API test. It runs after
+// every test so that all the hits are recorded.
+// The source set is looked up here: inside the task's own configuration, `the<SourceSetContainer>` is not an
+// extension of the Test task.
+val testSourceSet = the<SourceSetContainer>().named("test")
+val contractCoverage =
+    tasks.register<Test>("contractCoverage") {
+        group = "verification"
+        description = "Fails when a documented operation or response status has no API test that reaches it."
+        testClassesDirs = testSourceSet.get().output.classesDirs
+        classpath = testSourceSet.get().runtimeClasspath
+        filter { includeTestsMatching("*ContractCoverageTest") }
+        dependsOn(tasks.test)
+    }
+
+// Gradle skips JaCoCo's verification when no test wrote execution data, and the contract gate treats an absent
+// test tree as no tests to run. This task fails instead, so deleting the tests cannot pass `check`. It has no
+// outputs, so it runs on every build.
+val requireApiTests =
+    tasks.register("requireApiTests") {
+        group = "verification"
+        description = "Fails when the test classes lack the contract coverage test, so that no gate passes empty."
+        dependsOn(tasks.named("testClasses"))
+        // A local copy, so the action below captures the file collection and not the script.
+        val testClassesOutput = testSourceSet.get().output.classesDirs
+        doLast {
+            val contractTests = testClassesOutput.asFileTree.matching { include("**/ContractCoverageTest.class") }
+            if (contractTests.isEmpty) {
+                throw GradleException("no API tests were compiled: src/test must hold the contract coverage test")
+            }
+        }
+    }
+
 tasks.check {
-    dependsOn(tasks.jacocoTestCoverageVerification)
+    dependsOn(tasks.jacocoTestCoverageVerification, contractCoverage, requireApiTests)
 }
 
 pitest {
@@ -119,6 +167,8 @@ pitest {
     junit5PluginVersion = libs.findVersion("pitest-junit5").get().requiredVersion
     targetClasses = setOf("com.example.slopproof.*")
     targetTests = setOf("com.example.slopproof.*")
+    // The contract gate reads the hits of the other tests, so PIT's own run has nothing to read.
+    excludedTestClasses = setOf("com.example.slopproof.support.ContractCoverageTest")
     excludedClasses =
         setOf(
             "com.example.slopproof.api.*",

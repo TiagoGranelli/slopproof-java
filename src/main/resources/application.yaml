@@ -21,8 +21,7 @@ spring:
     sql-dialect: postgres
   flyway:
     enabled: true
-  # The API takes JSON only. Spring's form filter reads a PUT, PATCH or DELETE body whole, outside the JSON
-  # limits, and multipart parsing has no limit of its own, so both are off.
+  # JSON only: the form filter and multipart read whole bodies outside the JSON limits.
   mvc:
     formcontent:
       filter:

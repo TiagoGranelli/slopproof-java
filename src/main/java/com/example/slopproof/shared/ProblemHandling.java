@@ -2,9 +2,12 @@ package com.example.slopproof.shared;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.net.URI;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tomcat.util.http.InvalidParameterException;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
@@ -37,6 +40,31 @@ public class ProblemHandling extends ResponseEntityExceptionHandler {
           + "or there are too many parameters";
 
   private static final Logger log = LoggerFactory.getLogger(ProblemHandling.class);
+
+  // RFC 9457 makes the type optional and defaults it to about:blank. Spring leaves a problem's type
+  // unset
+  // (null), and the JSON drops it, but the contract requires a type, so the framework's own
+  // problems get one.
+  private static final URI ABOUT_BLANK = URI.create("about:blank");
+
+  @Override
+  protected @Nullable ResponseEntity<Object> handleExceptionInternal(
+      Exception exception,
+      @Nullable Object body,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    // Spring fills the body of its own exceptions inside the call, so the type is set on the
+    // result.
+    ResponseEntity<Object> response =
+        super.handleExceptionInternal(exception, body, headers, status, request);
+    if (response != null
+        && response.getBody() instanceof ProblemDetail problem
+        && hasNoType(problem)) {
+      problem.setType(frameworkType(status));
+    }
+    return response;
+  }
 
   @Override
   protected ResponseEntity<Object> handleMethodArgumentNotValid(
@@ -97,14 +125,31 @@ public class ProblemHandling extends ResponseEntityExceptionHandler {
     ProblemDetail problem =
         ProblemDetail.forStatusAndDetail(
             HttpStatus.INTERNAL_SERVER_ERROR, "The server could not process the request.");
+    problem.setType(frameworkType(HttpStatus.INTERNAL_SERVER_ERROR));
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
   }
 
   private static ResponseEntity<Object> problemResponse(
       HttpStatusCode status, HttpHeaders headers, String detail) {
-    return ResponseEntity.status(status)
-        .headers(headers)
-        .body(ProblemDetail.forStatusAndDetail(status, detail));
+    ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+    problem.setType(frameworkType(status));
+    return ResponseEntity.status(status).headers(headers).body(problem);
+  }
+
+  private static boolean hasNoType(ProblemDetail problem) {
+    return problem.getType() == null || ABOUT_BLANK.equals(problem.getType());
+  }
+
+  // The status names the type, as in urn:slopproof:problem:bad-request, so a client can tell the
+  // framework's
+  // failures apart as it does the feature's.
+  private static URI frameworkType(HttpStatusCode status) {
+    HttpStatus known = HttpStatus.resolve(status.value());
+    String slug =
+        known == null
+            ? "status-" + status.value()
+            : known.name().toLowerCase(Locale.ROOT).replace('_', '-');
+    return URI.create("urn:slopproof:problem:" + slug);
   }
 
   private static String describe(FieldError error) {
