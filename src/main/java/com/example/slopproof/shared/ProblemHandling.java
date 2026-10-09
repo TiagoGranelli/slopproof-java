@@ -33,7 +33,8 @@ public class ProblemHandling extends ResponseEntityExceptionHandler {
   // Tomcat raises one exception for a value that is not text and for too many parameters, so the
   // detail names both. Public so the test checks the text without copying it.
   public static final String UNDECODABLE_QUERY_DETAIL =
-      "the query string cannot be read: a value is not text, or there are too many parameters";
+      "the query string cannot be read: a value is not text, a parameter has no name, "
+          + "or there are too many parameters";
 
   private static final Logger log = LoggerFactory.getLogger(ProblemHandling.class);
 

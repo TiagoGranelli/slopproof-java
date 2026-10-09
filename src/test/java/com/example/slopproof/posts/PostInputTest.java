@@ -6,7 +6,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.slopproof.shared.JsonInputConfiguration;
+import com.example.slopproof.shared.StrictUtf8JsonFilter;
 import com.example.slopproof.support.EmbeddedPostgresConfiguration;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,8 +21,8 @@ import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Checks the create body against the rules the contract cannot express: text that only looks empty,
- * characters Postgres refuses, and JSON the contract does not describe. Each refusal is a 400 with
- * a problem document, never a 500.
+ * characters Postgres refuses or that hide text, and JSON the contract does not describe. Each
+ * refusal is a 400 with a problem document, never a 500.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,7 +32,7 @@ class PostInputTest {
   private static final String POSTS = "/api/posts";
 
   private static final String CHARACTERS_REFUSED =
-      "%s must not contain control, unassigned, private-use, bidi or unpaired surrogate characters";
+      "%s must not contain control, bidi, hidden or unpaired surrogate characters";
 
   private final MockMvc mvc;
 
@@ -49,16 +52,48 @@ class PostInputTest {
   }
 
   @Test
-  void refusesUnassignedPrivateUseAndBidiCharacters() throws Exception {
-    // U+E0080 is unassigned and default-ignorable, so it draws nothing and dodges the blank check.
+  void refusesCharactersThatHideOrReorderText() throws Exception {
+    // U+E0080 is unassigned and default-ignorable, so it draws nothing.
     refused("{\"title\":\"\\udb40\\udc80\",\"body\":\"x\"}")
-        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
-    refused("{\"title\":\"a\\ue000\",\"body\":\"x\"}")
         .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
     // A right-to-left override reorders the text after it, so the title on screen differs from the
     // stored one.
     refused("{\"title\":\"a\\u202eb\",\"body\":\"x\"}")
         .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    // U+E0049 is a tag, which spells ASCII that no renderer shows.
+    refused("{\"title\":\"a\\udb40\\udc49\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    // A noncharacter is reserved for software and never text.
+    refused("{\"title\":\"a\\uffff\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+  }
+
+  @Test
+  void refusesMisplacedOrRepeatedSelectors() throws Exception {
+    // A non-emoji selector hides data, whatever it follows.
+    refused("{\"title\":\"a\\ufe00\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    // A presentation selector needs a character before it and takes no second selector.
+    refused("{\"title\":\"\\ufe0fa\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+    refused("{\"title\":\"a\\ufe0f\\ufe0f\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value(CHARACTERS_REFUSED.formatted("title")));
+  }
+
+  @Test
+  void acceptsTextThatUsesNewerCharactersAndSelectorsCorrectly() throws Exception {
+    // U+20C1 is newer than the JDK's Unicode table; U+F8FF is the Apple logo, in private use.
+    mvc.perform(
+            post(POSTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"100 \\u20c1 \\uf8ff\",\"body\":\"x\"}"))
+        .andExpect(status().isCreated());
+    // An emoji presentation selector after its character is ordinary.
+    mvc.perform(
+            post(POSTS)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"\\u2764\\ufe0f\",\"body\":\"x\"}"))
+        .andExpect(status().isCreated());
   }
 
   @Test
@@ -77,6 +112,27 @@ class PostInputTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"\\ud83d\\ude00\",\"body\":\"x\"}"))
         .andExpect(status().isCreated());
+  }
+
+  @Test
+  void refusesAnOverlongEncodingBeforeAnythingParsesIt() throws Exception {
+    // C0 BC is an overlong '<': Jackson would read it, and a proxy would not.
+    byte[] head = "{\"title\":\"".getBytes(StandardCharsets.UTF_8);
+    byte[] overlong = {(byte) 0xC0, (byte) 0xBC};
+    byte[] tail = "\",\"body\":\"x\"}".getBytes(StandardCharsets.UTF_8);
+    byte[] body =
+        ByteBuffer.allocate(head.length + overlong.length + tail.length)
+            .put(head)
+            .put(overlong)
+            .put(tail)
+            .array();
+    refused(body).andExpect(jsonPath("$.detail").value(StrictUtf8JsonFilter.REFUSED_DETAIL));
+  }
+
+  @Test
+  void refusesARawNulByte() throws Exception {
+    refused("{\"title\":\"a\",\"body\":\"x\"}\0")
+        .andExpect(jsonPath("$.detail").value(StrictUtf8JsonFilter.REFUSED_DETAIL));
   }
 
   @Test
@@ -106,10 +162,14 @@ class PostInputTest {
   void refusesDocumentsPastTheLengthLimit() throws Exception {
     String padding = " ".repeat((int) JsonInputConfiguration.MAX_DOCUMENT_LENGTH);
     refused(padding + "{\"title\":\"a\",\"body\":\"x\"}")
-        .andExpect(jsonPath("$.detail").value("Failed to read request"));
+        .andExpect(jsonPath("$.detail").value(StrictUtf8JsonFilter.REFUSED_DETAIL));
   }
 
   private ResultActions refused(String json) throws Exception {
+    return refused(json.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private ResultActions refused(byte[] json) throws Exception {
     return mvc.perform(post(POSTS).contentType(MediaType.APPLICATION_JSON).content(json))
         .andExpect(status().isBadRequest())
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
