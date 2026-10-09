@@ -49,6 +49,9 @@ swagger-request-validator-mockmvc = { module = "com.atlassian.oai:swagger-reques
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
 findsecbugs = { module = "com.h3xstream.findsecbugs:findsecbugs-plugin", version.ref = "findsecbugs" }
+# wp:static-analysis
+pmd-cli = { module = "net.sourceforge.pmd:pmd-cli", version.ref = "pmd" }
+pmd-java = { module = "net.sourceforge.pmd:pmd-java", version.ref = "pmd" }
 pitest-junit5 = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5" }
 # Build-time code generation (used by build-logic, outside the Spring Boot BOM).
 jooq-codegen = { module = "org.jooq:jooq-codegen", version.ref = "jooq" }
