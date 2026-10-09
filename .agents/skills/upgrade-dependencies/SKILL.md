@@ -20,7 +20,9 @@ quarantine, and the codegen pins that equal the Spring Boot BOM. Read it first. 
    google-java-format.
 4. **Rewrite the locks and checksums.** `./gradlew spotlessApply && ./gradlew --write-locks --write-verification-metadata
    sha256 check -x scanVulnerabilities` records the three lockfiles and a SHA-256 for each artifact in
-   `gradle/verification-metadata.xml`. Review that the diff only adds and changes the bumped artifacts.
+   `gradle/verification-metadata.xml`. Run it with `GRADLE_USER_HOME` pointing at an empty directory (and
+   `mutationTest bootJar cyclonedxDirectBom` added): with a warm cache Gradle never fetches the parent POMs and BOMs,
+   so they get no checksum and a fresh clone fails. Review that the diff only adds and changes the bumped artifacts.
 5. **Check on the new locks.** Run `./gradlew check`: it runs osv-scanner on the new lockfile, and a strict lock that
    does not match fails the build, which is the check you want. Also run `./gradlew mutationTest bootJar` once, so the
    tools outside `check` resolve against the checksums.

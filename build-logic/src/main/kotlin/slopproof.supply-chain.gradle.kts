@@ -19,7 +19,8 @@ plugins {
 // It runs `check` rather than a task that resolves every configuration, because some configurations (PMD's
 // auxclasspath, Spotless's formatters) exist or resolve only when their task is stored in the configuration
 // cache. Gradle writes the locks only when the build succeeds, and osv-scanner reads the old lockfile, so it is
-// left out of that run; the plain `check` after it runs it on the new locks.
+// left out of that run; the plain `check` after it runs it on the new locks. The metadata run needs an empty
+// GRADLE_USER_HOME: from a warm cache Gradle skips the parent POMs, which a fresh clone then fails to verify.
 // sha256 pins each artifact's checksum. `<verify-signatures>` stays false: PGP verification needs the signing
 // keys from a key server, which corporate networks often block, and those keys would still be trusted by the
 // repo rather than by a reviewer. The checksums already catch a changed artifact at the same coordinates.

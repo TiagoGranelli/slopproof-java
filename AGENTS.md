@@ -89,7 +89,7 @@ negotiable: fix the code, never the threshold.
 | `./gradlew mutationTest` | PIT mutation testing, with its thresholds. Slow: run it on CI or nightly, not per change |
 | `./gradlew openApiGenerate`, `./gradlew generateJooq` | Regenerate the code from the contract and the migrations. `compileJava` runs both |
 | `./gradlew installGitHooks` | Points git at `config/git-hooks`, so the pre-commit hook runs `spotlessCheck`. Once per clone |
-| `./gradlew spotlessApply && ./gradlew --write-locks --write-verification-metadata sha256 check -x scanVulnerabilities` | Rewrites the three lockfiles and `gradle/verification-metadata.xml`. Only after a dependency change; then run `./gradlew check` |
+| `./gradlew spotlessApply && ./gradlew --write-locks --write-verification-metadata sha256 check -x scanVulnerabilities` | Rewrites the three lockfiles and `gradle/verification-metadata.xml`. Only after a dependency change; then run `./gradlew check`. Set `GRADLE_USER_HOME` to an empty directory for that run: a warm cache skips the parent POMs, and a fresh clone then fails verification |
 | `./gradlew cyclonedxDirectBom` | Writes the SBOM to `build/reports/sbom/bom.json` |
 | `./gradlew checkLicense` | Fails on a license that is not in `config/licenses/allowed-licenses.json` (part of `check`) |
 
