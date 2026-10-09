@@ -1,0 +1,182 @@
+openapi: 3.0.3
+info:
+  title: Slopproof API
+  version: 0.1.0
+  description: >-
+    The contract of the HTTP API. It is the source of truth: the server interfaces and DTOs are generated
+    from it, the tests validate every response against it, and oasdiff rejects a breaking change to it.
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: posts
+    description: Short public text posts.
+paths:
+  /api/posts:
+    get:
+      operationId: listPosts
+      tags: [posts]
+      summary: List posts, newest first.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: cursor
+          in: query
+          required: false
+          description: The nextCursor of the previous page. Opaque to the client.
+          schema:
+            type: string
+            maxLength: 200
+      responses:
+        "200":
+          description: One page of posts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a post.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+      responses:
+        "201":
+          description: The created post.
+          headers:
+            Location:
+              description: URL of the created post.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /api/posts/{postId}:
+    parameters:
+      - name: postId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: Get one post.
+      responses:
+        "200":
+          description: The post.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a post.
+      responses:
+        "204":
+          description: The post was deleted.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  responses:
+    BadRequest:
+      description: The request does not match the contract.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: No resource has this id.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Post:
+      type: object
+      additionalProperties: false
+      required: [id, title, body, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        createdAt:
+          type: string
+          format: date-time
+    CreatePostRequest:
+      type: object
+      additionalProperties: false
+      required: [title, body]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 10000
+    PostPage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Post"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Pass as cursor to get the next page; absent on the last page.
+    Problem:
+      description: An RFC 9457 problem details object.
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string

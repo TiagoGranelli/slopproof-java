@@ -1,0 +1,13 @@
+.gradle/
+build/
+build-logic/.gradle/
+build-logic/build/
+.kotlin/
+*.class
+.idea/
+*.iml
+.vscode/
+out/
+bin/
+.DS_Store
+Thumbs.db
