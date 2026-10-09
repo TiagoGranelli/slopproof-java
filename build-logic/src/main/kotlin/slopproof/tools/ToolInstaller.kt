@@ -10,7 +10,6 @@ import java.nio.file.LinkOption
 import java.nio.file.StandardOpenOption
 import java.security.DigestInputStream
 import java.security.MessageDigest
-import java.util.UUID
 
 /** A pinned tool for one platform, as the build sees it. [entry] is null for a plain executable. */
 data class ToolRelease(
@@ -64,19 +63,13 @@ internal class ToolInstaller(
         val archive = dir.resolve(archiveName(release))
         if (!dir.resolve(COMPLETE_MARKER).isFile || !archive.isFile || !executable.isFile) return false
         if (sha256Of(archive) != release.sha256) return false
-        return sha256Of(executable) == expectedExecutableSha(release, archive, dir)
+        return sha256Of(executable) == expectedExecutableSha(release, archive)
     }
 
     /** The hash the executable must have: the pin itself for a plain binary, else the hash of its entry in the archive. */
-    private fun expectedExecutableSha(release: ToolRelease, archive: File, dir: File): String? {
+    private fun expectedExecutableSha(release: ToolRelease, archive: File): String? {
         val entry = release.entry ?: return release.sha256
-        // A random name the extraction creates fresh (CREATE_NEW), so no link planted at a known name can redirect it.
-        val probe = dir.resolve("verify-${UUID.randomUUID()}.tmp")
-        return try {
-            if (extractEntry(archive, entry, probe)) sha256Of(probe) else null
-        } finally {
-            Files.deleteIfExists(probe.toPath())
-        }
+        return entrySha256(archive, entry)
     }
 
     private fun fetch(release: ToolRelease, dir: File, executable: File) {

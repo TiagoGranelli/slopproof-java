@@ -37,11 +37,11 @@ internal class ToolDownloader(env: Map<String, String> = System.getenv()) {
         val response = try {
             client.send(request, HttpResponse.BodyHandlers.ofFile(target.toPath()))
         } catch (failure: IOException) {
+            // No cause attached: a redirect target chosen by the server can be printed by Gradle's "Caused by" output.
             throw GradleException(
                 "slopproof: cannot download $describe (${failure.javaClass.simpleName}). " +
                     "Behind a proxy? Set HTTPS_PROXY to host:port, or point -Pslopproof.tools.mirror at an internal " +
                     "mirror of GitHub releases, or skip with -Pslopproof.tools.skip=true.",
-                failure,
             )
         }
         if (response.statusCode() != HTTP_OK) {
