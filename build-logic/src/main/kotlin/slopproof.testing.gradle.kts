@@ -17,31 +17,36 @@ dependencies {
     testImplementation(libs.findLibrary("archunit-junit5").get())
     testImplementation(libs.findLibrary("swagger-request-validator-mockmvc").get())
     testImplementation(libs.findLibrary("embedded-postgres").get())
-    // The embedded Postgres binaries are one artifact per platform; the BOM picks the one for this machine.
+    // embedded-postgres brings one binaries artifact per platform and picks the host's at runtime; the BOM
+    // pins them all to PostgreSQL 18. Apple Silicon is not among its defaults.
     testImplementation(platform(libs.findLibrary("embedded-postgres-binaries-bom").get()))
+    testRuntimeOnly("io.zonky.test.postgres:embedded-postgres-binaries-darwin-arm64v8")
 }
 
 // Mockito 5 attaches to the JVM at run time, and JDK 21+ warns about that. A future JDK will refuse it by
 // default (JEP 451). Loading it as a javaagent avoids both. The version comes from the Spring Boot BOM, so it
 // matches the mockito-core on the test classpath.
-val mockitoAgent: Configuration = configurations.create("mockitoAgent") {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
+val mockitoAgent: Configuration =
+    configurations.create("mockitoAgent") {
+        isCanBeConsumed = false
+        isCanBeResolved = true
+    }
 dependencies {
     mockitoAgent(platform(SpringBootPlugin.BOM_COORDINATES))
     mockitoAgent("org.mockito:mockito-core") { isTransitive = false }
 }
-val mockitoAgentArgument: Provider<String> = mockitoAgent.elements.map { agentFiles ->
-    "-javaagent:${agentFiles.single().asFile.absolutePath}"
-}
+val mockitoAgentArgument: Provider<String> =
+    mockitoAgent.elements.map { agentFiles ->
+        "-javaagent:${agentFiles.single().asFile.absolutePath}"
+    }
 
 // Generated code (OpenAPI stubs, jOOQ tables) and the entry point are not ours to cover or mutate.
-val generatedAndEntryPoint = listOf(
-    "com/example/slopproof/api/**",
-    "com/example/slopproof/db/**",
-    "com/example/slopproof/SlopproofApplication.class",
-)
+val generatedAndEntryPoint =
+    listOf(
+        "com/example/slopproof/api/**",
+        "com/example/slopproof/db/**",
+        "com/example/slopproof/SlopproofApplication.class",
+    )
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
@@ -68,9 +73,10 @@ jacoco {
     toolVersion = libs.findVersion("jacoco").get().requiredVersion
 }
 
-val coveredClasses = the<SourceSetContainer>().named("main").map {
-    it.output.asFileTree.matching { exclude(generatedAndEntryPoint) }
-}
+val coveredClasses =
+    the<SourceSetContainer>().named("main").map {
+        it.output.asFileTree.matching { exclude(generatedAndEntryPoint) }
+    }
 
 tasks.jacocoTestReport {
     classDirectories.setFrom(coveredClasses)
@@ -113,11 +119,12 @@ pitest {
     junit5PluginVersion = libs.findVersion("pitest-junit5").get().requiredVersion
     targetClasses = setOf("com.example.slopproof.*")
     targetTests = setOf("com.example.slopproof.*")
-    excludedClasses = setOf(
-        "com.example.slopproof.api.*",
-        "com.example.slopproof.db.*",
-        "com.example.slopproof.SlopproofApplication",
-    )
+    excludedClasses =
+        setOf(
+            "com.example.slopproof.api.*",
+            "com.example.slopproof.db.*",
+            "com.example.slopproof.SlopproofApplication",
+        )
     // Gates the mutation score and the line coverage PIT measures on its own run, not JaCoCo's.
     mutationThreshold = 70
     coverageThreshold = 80

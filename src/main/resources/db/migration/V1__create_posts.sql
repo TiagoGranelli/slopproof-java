@@ -7,4 +7,8 @@ CREATE TABLE posts (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- A migration must never wait behind a long lock or run unbounded on a live database (squawk).
+SET lock_timeout = '1s';
+SET statement_timeout = '5s';
+
 CREATE INDEX posts_created_at_id_idx ON posts (created_at DESC, id DESC);

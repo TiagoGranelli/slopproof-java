@@ -6,11 +6,12 @@ plugins {
     java
 }
 
-val generateJooq = tasks.register<GenerateJooqTask>("generateJooq") {
-    migrationsDirectory.set(layout.projectDirectory.dir("src/main/resources/db/migration"))
-    outputDirectory.set(layout.buildDirectory.dir("generated/jooq"))
-    packageName.set("com.example.slopproof.db")
-}
+val generateJooq =
+    tasks.register<GenerateJooqTask>("generateJooq") {
+        migrationsDirectory.set(layout.projectDirectory.dir("src/main/resources/db/migration"))
+        outputDirectory.set(layout.buildDirectory.dir("generated/jooq"))
+        packageName.set("com.example.slopproof.db")
+    }
 
 // The generated sources compile with the hand-written ones, under the same -Werror rules.
 the<JavaPluginExtension>().sourceSets.named("main") {

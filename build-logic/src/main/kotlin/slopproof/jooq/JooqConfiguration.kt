@@ -1,17 +1,20 @@
 package slopproof.jooq
 
-import java.io.File
 import org.jooq.meta.jaxb.Configuration
 import org.jooq.meta.jaxb.Database
 import org.jooq.meta.jaxb.Generate
 import org.jooq.meta.jaxb.Generator
 import org.jooq.meta.jaxb.Target
+import java.io.File
 
 /**
  * The codegen options for the migrated schema. Every option that changes the output is set here, so a
  * jOOQ upgrade that changes a default cannot change the generated code unnoticed.
  */
-internal fun jooqConfiguration(outputDirectory: File, packageName: String): Configuration =
+internal fun jooqConfiguration(
+    outputDirectory: File,
+    packageName: String,
+): Configuration =
     Configuration().withGenerator(
         Generator()
             .withName("org.jooq.codegen.JavaGenerator")
@@ -21,8 +24,7 @@ internal fun jooqConfiguration(outputDirectory: File, packageName: String): Conf
                     .withInputSchema("public")
                     // Flyway's bookkeeping table is not part of the application schema.
                     .withExcludes("flyway_schema_history"),
-            )
-            .withGenerate(
+            ).withGenerate(
                 Generate()
                     .withRecords(true)
                     .withPojos(false)
@@ -32,8 +34,7 @@ internal fun jooqConfiguration(outputDirectory: File, packageName: String): Conf
                     // A timestamp in the annotation would change the output on every run and defeat the cache.
                     .withGeneratedAnnotation(true)
                     .withGeneratedAnnotationDate(false),
-            )
-            .withTarget(
+            ).withTarget(
                 Target()
                     .withPackageName(packageName)
                     .withDirectory(outputDirectory.absolutePath)

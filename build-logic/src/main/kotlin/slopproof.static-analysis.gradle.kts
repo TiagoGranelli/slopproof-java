@@ -27,7 +27,11 @@ dependencies {
 }
 
 // Files the generators write, and the regex form Error Prone takes (both separators, so Windows works).
-val generatedDir = layout.buildDirectory.dir("generated").get().asFile
+val generatedDir =
+    layout.buildDirectory
+        .dir("generated")
+        .get()
+        .asFile
 val generatedPathRegex = ".*[/\\\\]build[/\\\\]generated[/\\\\].*"
 
 tasks.withType<JavaCompile>().configureEach {
@@ -100,46 +104,57 @@ tasks.withType<SpotBugsTask>().configureEach {
 
 // PMD ships no copy-paste task in Gradle, so run its CPD command line tool directly. It runs in its own
 // JVM from a detached configuration, so the PMD rule set does not leak into the build's classpath.
-val pmdCli = configurations.create("pmdCli") {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
+val pmdCli =
+    configurations.create("pmdCli") {
+        isCanBeConsumed = false
+        isCanBeResolved = true
+    }
 dependencies {
     add("pmdCli", libs.findLibrary("pmd-cli").get())
     add("pmdCli", libs.findLibrary("pmd-java").get())
 }
 
-val cpd = tasks.register<JavaExec>("cpd") {
-    group = "verification"
-    description = "Fails when a block of at least 100 tokens is copy-pasted (PMD CPD)."
-    // A local copy: the doLast below must not capture this script, which the configuration cache cannot store.
-    val report = layout.buildDirectory.file("reports/cpd/cpd.txt").get().asFile
-    classpath(pmdCli)
-    mainClass = "net.sourceforge.pmd.cli.PmdCli"
-    args(
-        "cpd",
-        "--language", "java",
-        "--minimum-tokens", "100",
-        "--format", "text",
-        "--report-file", report.path,
-        "--dir", "src",
-    )
-    inputs.files(fileTree("src") { include("**/*.java") })
-    outputs.file(report)
-    outputs.cacheIf { true }
-    // CPD exits 4 when it finds duplicates. Gradle's own message for that names only the exit code, so this
-    // one names the file that lists the blocks. The task reads the exit code itself, so it fails here.
-    isIgnoreExitValue = true
-    doLast {
-        val exitValue = executionResult.get().exitValue
-        if (exitValue != 0) {
-            throw GradleException(
-                "PMD CPD exited with $exitValue (4 means duplicated code). " +
-                    "See the duplicated blocks in $report",
-            )
+val cpd =
+    tasks.register<JavaExec>("cpd") {
+        group = "verification"
+        description = "Fails when a block of at least 100 tokens is copy-pasted (PMD CPD)."
+        // A local copy: the doLast below must not capture this script, which the configuration cache cannot store.
+        val report =
+            layout.buildDirectory
+                .file("reports/cpd/cpd.txt")
+                .get()
+                .asFile
+        classpath(pmdCli)
+        mainClass = "net.sourceforge.pmd.cli.PmdCli"
+        args(
+            "cpd",
+            "--language",
+            "java",
+            "--minimum-tokens",
+            "100",
+            "--format",
+            "text",
+            "--report-file",
+            report.path,
+            "--dir",
+            "src",
+        )
+        inputs.files(fileTree("src") { include("**/*.java") })
+        outputs.file(report)
+        outputs.cacheIf { true }
+        // CPD exits 4 when it finds duplicates. Gradle's own message for that names only the exit code, so this
+        // one names the file that lists the blocks. The task reads the exit code itself, so it fails here.
+        isIgnoreExitValue = true
+        doLast {
+            val exitValue = executionResult.get().exitValue
+            if (exitValue != 0) {
+                throw GradleException(
+                    "PMD CPD exited with $exitValue (4 means duplicated code). " +
+                        "See the duplicated blocks in $report",
+                )
+            }
         }
     }
-}
 
 tasks.named("check") {
     dependsOn(cpd)

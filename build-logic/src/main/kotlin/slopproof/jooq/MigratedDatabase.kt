@@ -1,10 +1,10 @@
 package slopproof.jooq
 
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
+import org.flywaydb.core.Flyway
 import java.io.File
 import java.time.Duration
 import javax.sql.DataSource
-import org.flywaydb.core.Flyway
 
 /**
  * Starts a throwaway PostgreSQL 18, applies [migrations] to it and runs [block] on its DataSource.
@@ -15,7 +15,8 @@ internal fun <T> withMigratedDatabase(
     classLoader: ClassLoader,
     block: (DataSource) -> T,
 ): T =
-    EmbeddedPostgres.builder()
+    EmbeddedPostgres
+        .builder()
         .setCleanDataDirectory(true)
         // The database is discarded after this run, so durability is not worth the fsync cost.
         .setServerConfig("fsync", "off")
@@ -26,7 +27,8 @@ internal fun <T> withMigratedDatabase(
             val dataSource = postgres.postgresDatabase
             // Flyway finds its PostgreSQL support through ServiceLoader, so name the loader that holds
             // flyway-database-postgresql rather than relying on the thread context loader.
-            Flyway.configure(classLoader)
+            Flyway
+                .configure(classLoader)
                 .dataSource(dataSource)
                 .locations("filesystem:${migrations.absolutePath}")
                 .load()

@@ -18,7 +18,6 @@ import org.jooq.codegen.GenerationTool
  */
 @CacheableTask
 abstract class GenerateJooqTask : DefaultTask() {
-
     /** The versioned SQL files, applied in order to the throwaway database jOOQ reads. */
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
