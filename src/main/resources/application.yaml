@@ -1,0 +1,37 @@
+# The database comes from the environment, and nothing here holds a credential. A missing variable stops the
+# application at startup, because the datasource rejects the unresolved placeholder, rather than falling back
+# to a default password.
+spring:
+  application:
+    name: slopproof
+  main:
+    banner-mode: off
+  datasource:
+    url: ${SLOPPROOF_DB_URL}
+    username: ${SLOPPROOF_DB_USER}
+    password: ${SLOPPROOF_DB_PASSWORD}
+  threads:
+    virtual:
+      enabled: true
+  # The contract says nextCursor is absent on the last page. The generator adds NON_NULL only to required fields,
+  # so the API leaves every null field out, which is the same rule for all of them.
+  jackson:
+    default-property-inclusion: non_null
+  jooq:
+    sql-dialect: postgres
+  flyway:
+    enabled: true
+  # The API takes JSON only. Spring's form filter reads a PUT, PATCH or DELETE body whole, outside the JSON
+  # limits, and multipart parsing has no limit of its own, so both are off.
+  mvc:
+    formcontent:
+      filter:
+        enabled: false
+    problemdetails:
+      enabled: true
+  servlet:
+    multipart:
+      enabled: false
+server:
+  error:
+    include-stacktrace: never
