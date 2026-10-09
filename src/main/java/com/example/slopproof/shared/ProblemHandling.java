@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
@@ -23,8 +24,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * Answers every error of the API as {@code application/problem+json}, the shape of the contract's
  * Problem schema. The details this class writes name the field or parameter that was wrong and
  * never echo the rejected value, because a request body can hold a secret. Spring's own details for
- * an unknown route, method or media type can repeat the request's path or type; those come from the
- * client, not from anything stored.
+ * an unknown route, method or media type can repeat the request's path or type, and the {@code
+ * instance} field repeats the path. All of that came from the client, and only that client sees it.
  */
 @RestControllerAdvice
 public class ProblemHandling extends ResponseEntityExceptionHandler {
@@ -68,6 +69,19 @@ public class ProblemHandling extends ResponseEntityExceptionHandler {
             .map(ProblemHandling::describe)
             .collect(Collectors.joining("; "));
     return problemResponse(HttpStatus.BAD_REQUEST, HttpHeaders.EMPTY, detail);
+  }
+
+  /**
+   * Tomcat refuses a query string it cannot decode, and its message quotes the raw value, which can
+   * hold a newline that forges a log line. So this answers 400 without the message, and logs
+   * nothing.
+   */
+  @ExceptionHandler(InvalidParameterException.class)
+  public ResponseEntity<Object> handleUndecodableParameter() {
+    return problemResponse(
+        HttpStatus.BAD_REQUEST,
+        HttpHeaders.EMPTY,
+        "a query parameter holds a value that cannot be read as text");
   }
 
   /**

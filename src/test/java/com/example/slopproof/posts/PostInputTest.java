@@ -36,21 +36,25 @@ class PostInputTest {
   }
 
   @Test
-  void refusesNulAndLoneSurrogatesInText() throws Exception {
-    // The JSON escapes these, so the database never sees a raw NUL or a lone surrogate.
+  void refusesControlsAndLoneSurrogatesInText() throws Exception {
+    // The JSON escapes these, so the database never sees a raw NUL, escape or lone surrogate.
     refused("{\"title\":\"a\\u0000b\",\"body\":\"x\"}")
         .andExpect(
             jsonPath("$.detail")
-                .value("title must not contain NUL or unpaired surrogate characters"));
+                .value("title must not contain control or unpaired surrogate characters"));
     refused("{\"title\":\"x\",\"body\":\"\\ud800\"}")
         .andExpect(
             jsonPath("$.detail")
-                .value("body must not contain NUL or unpaired surrogate characters"));
+                .value("body must not contain control or unpaired surrogate characters"));
+    refused("{\"title\":\"x\",\"body\":\"\\u001b[2J\"}");
   }
 
   @Test
   void refusesTextThatOnlyLooksEmpty() throws Exception {
     refused("{\"title\":\"\\u00a0\\u200b\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value("title must not be blank (got 2 characters)"));
+    // A Hangul filler and a combining mark show nothing either.
+    refused("{\"title\":\"\\u3164\\u034f\",\"body\":\"x\"}")
         .andExpect(jsonPath("$.detail").value("title must not be blank (got 2 characters)"));
   }
 
@@ -74,9 +78,23 @@ class PostInputTest {
   }
 
   @Test
+  void refusesRepeatedKeys() throws Exception {
+    refused("{\"title\":\"a\",\"title\":\"b\",\"body\":\"x\"}");
+  }
+
+  @Test
   void refusesTextPastTheStringLimit() throws Exception {
+    // @Size would refuse this body too, so the detail is Jackson's: that shows the cap ran first.
     String oversized = "x".repeat(JsonInputConfiguration.MAX_STRING_LENGTH + 1);
-    refused("{\"title\":\"a\",\"body\":\"" + oversized + "\"}");
+    refused("{\"title\":\"a\",\"body\":\"" + oversized + "\"}")
+        .andExpect(jsonPath("$.detail").value("Failed to read request"));
+  }
+
+  @Test
+  void refusesDocumentsPastTheLengthLimit() throws Exception {
+    String padding = " ".repeat((int) JsonInputConfiguration.MAX_DOCUMENT_LENGTH);
+    refused(padding + "{\"title\":\"a\",\"body\":\"x\"}")
+        .andExpect(jsonPath("$.detail").value("Failed to read request"));
   }
 
   private ResultActions refused(String json) throws Exception {

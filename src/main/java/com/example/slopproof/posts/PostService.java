@@ -2,6 +2,7 @@ package com.example.slopproof.posts;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class PostService {
+
+  // Hangul fillers and the Braille blank draw nothing, though Unicode files them as letters or
+  // symbols.
+  private static final Set<Integer> BLANK_FILLERS = Set.of(0x115F, 0x1160, 0x2800, 0x3164, 0xFFA0);
 
   private final PostRepository repository;
 
@@ -67,19 +72,25 @@ public class PostService {
     }
     if (value.codePoints().anyMatch(PostService::isRefused)) {
       throw new InvalidPostException(
-          "%s must not contain NUL or unpaired surrogate characters".formatted(field));
+          "%s must not contain control or unpaired surrogate characters".formatted(field));
     }
   }
 
-  // String.isBlank misses no-break and zero-width spaces, which are whitespace to a reader.
+  // String.isBlank misses no-break and zero-width spaces, which are whitespace to a reader. Marks
+  // count too, because text made only of them shows nothing.
   private static boolean isInvisible(int codePoint) {
     return Character.isWhitespace(codePoint)
         || Character.isSpaceChar(codePoint)
-        || Character.getType(codePoint) == Character.FORMAT;
+        || Character.getType(codePoint) == Character.FORMAT
+        || Character.getType(codePoint) == Character.NON_SPACING_MARK
+        || BLANK_FILLERS.contains(codePoint);
   }
 
-  // Postgres refuses NUL, and a lone surrogate would be stored as '?' without an error.
+  // Postgres refuses NUL, a lone surrogate would be stored as '?' without an error, and other
+  // controls, such as an escape sequence, rewrite the terminal of whoever reads the post.
   private static boolean isRefused(int codePoint) {
-    return codePoint == 0 || Character.getType(codePoint) == Character.SURROGATE;
+    boolean control = Character.getType(codePoint) == Character.CONTROL;
+    boolean lineLayout = codePoint == '\t' || codePoint == '\n' || codePoint == '\r';
+    return (control && !lineLayout) || Character.getType(codePoint) == Character.SURROGATE;
   }
 }
