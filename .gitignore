@@ -11,3 +11,5 @@ out/
 bin/
 .DS_Store
 Thumbs.db
+# wp:testing jqwik writes its failure database to the working directory; the Gradle Test task does not redirect it.
+.jqwik-database

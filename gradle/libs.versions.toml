@@ -35,6 +35,8 @@ pitest-junit5 = "1.2.3"
 pitest-gradle = "1.19.0"
 cyclonedx = "3.5.0"
 license-report = "3.1.4"
+# wp:testing JaCoCo 0.8.15 (released June 2026); it instruments Java 25 class files, see slopproof.testing.
+jacoco = "0.8.15"
 
 [libraries]
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
