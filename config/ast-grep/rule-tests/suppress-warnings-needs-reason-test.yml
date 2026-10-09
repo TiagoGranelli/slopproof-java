@@ -1,0 +1,30 @@
+id: suppress-warnings-needs-reason
+valid:
+  - |
+    class Posts {
+      // The generated client returns a raw List; the element type is checked by the contract tests.
+      @SuppressWarnings("unchecked")
+      List<Post> read(Object raw) { return (List<Post>) raw; }
+    }
+  - |
+    class Posts {
+      @SuppressWarnings("unchecked") // raw type from the JSON mapper, checked by the contract tests
+      List<Post> read(Object raw) { return (List<Post>) raw; }
+    }
+  - |
+    class Posts {
+      /* the mapper returns Object; the cast is checked when it is read */
+      @SuppressWarnings("unchecked")
+      List<Post> read(Object raw) { return (List<Post>) raw; }
+    }
+invalid:
+  - |
+    class Posts {
+      @SuppressWarnings("unchecked")
+      List<Post> read(Object raw) { return (List<Post>) raw; }
+    }
+  - |
+    class Posts {
+      @SuppressWarnings("unchecked")
+      private final List<Post> cache = new ArrayList<>();
+    }

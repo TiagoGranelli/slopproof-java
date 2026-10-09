@@ -1,0 +1,20 @@
+id: no-transactional-in-api
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  Controllers in an api package must not open transactions. Move the unit of work into a service method
+  annotated @Transactional, and let the controller only map the request and the response.
+rule:
+  any:
+    - kind: marker_annotation
+      regex: '^@Transactional\b'
+    - kind: annotation
+      regex: '^@Transactional\b'
+  inside:
+    kind: program
+    stopBy: end
+    has:
+      kind: package_declaration
+      regex: '^package\s+([\w.]+\.)?api(\.[\w.]+)?\s*;'

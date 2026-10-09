@@ -1,0 +1,26 @@
+id: no-field-injection
+valid:
+  - |
+    class Posts {
+      private final PostRepository repository;
+      Posts(PostRepository repository) { this.repository = repository; }
+    }
+  - |
+    class Posts {
+      @Value("${app.name}") private String name;
+    }
+invalid:
+  - |
+    class Posts {
+      @Autowired
+      private PostRepository repository;
+    }
+  - |
+    class Posts {
+      @Autowired private PostRepository repository;
+    }
+  - |
+    class Posts {
+      @org.springframework.beans.factory.annotation.Autowired
+      private PostRepository repository;
+    }

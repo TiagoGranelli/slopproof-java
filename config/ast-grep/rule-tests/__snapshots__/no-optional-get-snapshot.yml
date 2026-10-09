@@ -1,0 +1,29 @@
+id: no-optional-get
+snapshots:
+  ? |
+    class Posts {
+      Post find(String id) { return repository.findById(id).get(); }
+    }
+  : labels:
+    - source: repository.findById(id).get()
+      style: primary
+      start: 46
+      end: 75
+  ? |
+    class Posts {
+      String read() { return Optional.of("x").get(); }
+    }
+  : labels:
+    - source: Optional.of("x").get()
+      style: primary
+      start: 39
+      end: 61
+  ? |
+    class Posts {
+      String read(Optional<String> optional) { return optional.get(); }
+    }
+  : labels:
+    - source: optional.get()
+      style: primary
+      start: 64
+      end: 78

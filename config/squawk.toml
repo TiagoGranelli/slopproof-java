@@ -1,0 +1,7 @@
+# Migration gate: squawk lints the Flyway SQL in src/main/resources/db/migration.
+# Target PostgreSQL 18 (uuidv7() is built in). Flyway runs each migration in a transaction by default,
+# so assume it: squawk then skips the rules that only matter outside one (CONCURRENTLY, IF NOT EXISTS).
+# Run by the Gradle task with: squawk --config config/squawk.toml src/main/resources/db/migration/*.sql
+# A squawk warning is a real migration hazard: fix the SQL, do not add it to excluded_rules.
+pg_version = "18"
+assume_in_transaction = true

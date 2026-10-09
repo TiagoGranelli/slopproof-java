@@ -1,0 +1,20 @@
+id: no-optional-field-or-parameter
+valid:
+  - |
+    class Posts {
+      private final String title;
+      Optional<Post> find(String id) { return Optional.empty(); }
+    }
+invalid:
+  - |
+    class Posts {
+      private Optional<String> title;
+    }
+  - |
+    class Posts {
+      Post find(Optional<String> cursor) { return null; }
+    }
+  - |
+    class Posts {
+      private java.util.Optional<String> title;
+    }

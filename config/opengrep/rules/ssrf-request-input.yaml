@@ -1,0 +1,39 @@
+# Gate: request input reaching the URL of an outbound RestClient or URI.create call.
+# Run: opengrep scan --config config/opengrep --error --taint-intrafile --disable-version-check src/main/java
+# Test: opengrep test --taint-intrafile config/opengrep/rules (the .java beside a rule marks findings with ruleid: and clean lines with ok:)
+rules:
+  - id: ssrf-request-input
+    languages: [java]
+    severity: ERROR
+    message: >-
+      Request input builds the URL of an outbound HTTP call. An attacker can point the server at internal hosts
+      (SSRF). Call a fixed base URL and pass only path or query values as template arguments, or check the host
+      against an allowlist before the call.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @RequestParam $TYPE $ARG, ...) { ... }
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @PathVariable $TYPE $ARG, ...) { ... }
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @RequestBody $TYPE $ARG, ...) { ... }
+    pattern-sinks:
+      - patterns:
+          - pattern: $CLIENT.uri($URL, ...)
+          - focus-metavariable: $URL
+      - patterns:
+          - pattern: $CLIENT.uri($URL)
+          - focus-metavariable: $URL
+      - patterns:
+          - pattern: URI.create($URL)
+          - focus-metavariable: $URL
+    metadata:
+      cwe:
+        - "CWE-918: Server-Side Request Forgery (SSRF)"
+      category: security

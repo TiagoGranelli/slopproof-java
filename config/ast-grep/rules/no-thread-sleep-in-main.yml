@@ -1,0 +1,12 @@
+id: no-thread-sleep-in-main
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  Thread.sleep in production code blocks a request thread for a fixed time and cannot be cancelled cleanly.
+  Schedule the work (a scheduled task, a retry policy with backoff) or wait on the event itself.
+files:
+  - src/main/**/*.java
+rule:
+  pattern: Thread.sleep($$$ARGS)

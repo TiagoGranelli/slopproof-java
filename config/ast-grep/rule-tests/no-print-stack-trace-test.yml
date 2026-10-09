@@ -1,0 +1,21 @@
+id: no-print-stack-trace
+valid:
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { log.error("load failed", e); }
+      }
+    }
+invalid:
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { e.printStackTrace(); }
+      }
+    }
+  - |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { e.printStackTrace(System.err); }
+      }
+    }

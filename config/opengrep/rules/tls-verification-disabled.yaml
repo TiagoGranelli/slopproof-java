@@ -1,0 +1,21 @@
+# Gate: certificate or host-name verification switched off (an accept-all host-name verifier or an empty
+# checkServerTrusted). A trust store that trusts an extra CA is the fix, not this bypass.
+# Run: opengrep scan --config config/opengrep --error --taint-intrafile --disable-version-check src/main/java
+# Test: opengrep test --taint-intrafile config/opengrep/rules (the .java beside a rule marks findings with ruleid: and clean lines with ok:)
+rules:
+  - id: tls-verification-disabled
+    languages: [java]
+    severity: ERROR
+    message: >-
+      TLS verification is switched off: the client accepts any certificate or any host name, so a
+      man-in-the-middle reads the traffic and the credentials. Fix the trust store (import the CA into it) or
+      the host name in the certificate instead of disabling the check.
+    pattern-either:
+      - pattern: $CLIENT.setHostnameVerifier(($HOST, $SESSION) -> true)
+      - pattern: $CLIENT.setDefaultHostnameVerifier(($HOST, $SESSION) -> true)
+      - pattern: |
+          public void checkServerTrusted(...) {}
+    metadata:
+      cwe:
+        - "CWE-295: Improper Certificate Validation"
+      category: security

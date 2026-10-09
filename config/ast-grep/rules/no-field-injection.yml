@@ -1,0 +1,14 @@
+id: no-field-injection
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  @Autowired on a field hides the dependency and forces reflection in tests. Take it as a constructor
+  parameter and keep it in a private final field.
+rule:
+  kind: field_declaration
+  has:
+    kind: modifiers
+    has:
+      regex: '^@(org\.springframework\.beans\.factory\.annotation\.)?Autowired\b'

@@ -1,0 +1,41 @@
+id: no-sql-concatenation-jooq
+snapshots:
+  ? |
+    class Posts {
+      Condition byTitle(String title) { return DSL.condition("title = '" + title + "'"); }
+    }
+  : labels:
+    - source: DSL.condition("title = '" + title + "'")
+      style: primary
+      start: 57
+      end: 97
+    - source: '"title = ''" + title + "''"'
+      style: secondary
+      start: 71
+      end: 96
+  ? |
+    class Posts {
+      Field<?> column(String name) { return DSL.field("\"" + name + "\""); }
+    }
+  : labels:
+    - source: DSL.field("\"" + name + "\"")
+      style: primary
+      start: 54
+      end: 83
+    - source: '"\"" + name + "\""'
+      style: secondary
+      start: 64
+      end: 82
+  ? |
+    class Posts {
+      Field<?> order(String column) { return DSL.sql("order by " + column); }
+    }
+  : labels:
+    - source: DSL.sql("order by " + column)
+      style: primary
+      start: 55
+      end: 84
+    - source: '"order by " + column'
+      style: secondary
+      start: 63
+      end: 83

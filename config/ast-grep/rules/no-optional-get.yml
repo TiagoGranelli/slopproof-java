@@ -1,0 +1,13 @@
+id: no-optional-get
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  Optional.get() throws a bare NoSuchElementException with no context. Use orElseThrow(() -> new XxxException(
+  "what was missing", ...)) so the failure names the missing value.
+rule:
+  pattern: $RECEIVER.get()
+constraints:
+  RECEIVER:
+    regex: '(?i)optional|\bopt\b|\bfind\w*\('

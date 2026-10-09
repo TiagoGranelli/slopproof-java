@@ -1,0 +1,24 @@
+id: no-print-stack-trace
+snapshots:
+  ? |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { e.printStackTrace(); }
+      }
+    }
+  : labels:
+    - source: e.printStackTrace()
+      style: primary
+      start: 73
+      end: 92
+  ? |
+    class Posts {
+      void run() {
+        try { load(); } catch (IOException e) { e.printStackTrace(System.err); }
+      }
+    }
+  : labels:
+    - source: e.printStackTrace(System.err)
+      style: primary
+      start: 73
+      end: 102

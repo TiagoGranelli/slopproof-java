@@ -1,0 +1,33 @@
+id: suppress-warnings-needs-reason
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  @SuppressWarnings without a reason hides a warning from the next reader. Put a comment on the line above or
+  on the same line that says why the warning is safe to ignore here.
+rule:
+  all:
+    - any:
+        - kind: method_declaration
+        - kind: field_declaration
+        - kind: class_declaration
+        - kind: constructor_declaration
+        - kind: local_variable_declaration
+    - has:
+        kind: modifiers
+        has:
+          kind: annotation
+          regex: '^@SuppressWarnings\b'
+    - not:
+        any:
+          - follows:
+              any:
+                - kind: line_comment
+                - kind: block_comment
+              stopBy: neighbor
+          - has:
+              any:
+                - kind: line_comment
+                - kind: block_comment
+              stopBy: neighbor

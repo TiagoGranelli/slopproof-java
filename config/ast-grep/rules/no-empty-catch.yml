@@ -1,0 +1,14 @@
+id: no-empty-catch
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  An empty catch swallows the failure and leaves no trace. Handle it, or rethrow with the cause
+  (throw new XxxException("what failed", e)). A comment does not make an empty catch safe.
+rule:
+  kind: catch_clause
+  has:
+    field: body
+    kind: block
+    regex: '^\{(\s|//[^\n]*\n|/\*(?s:.*?)\*/)*\}$'

@@ -1,0 +1,17 @@
+id: no-broad-catch
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  Catching Exception, Throwable or RuntimeException hides the bugs it should surface, and a catch that only
+  logs or returns null hides them completely. Catch the specific exception, or rethrow with the cause.
+rule:
+  kind: catch_clause
+  has:
+    kind: catch_formal_parameter
+    regex: '\b(Exception|Throwable|RuntimeException)\b'
+  not:
+    has:
+      kind: throw_statement
+      stopBy: end

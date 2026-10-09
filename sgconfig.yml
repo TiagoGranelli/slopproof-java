@@ -1,0 +1,7 @@
+# ast-grep configuration for the Java code gate: `ast-grep scan --config sgconfig.yml` lints the sources and
+# `ast-grep test --config sgconfig.yml` runs each rule against the valid and invalid snippets in rule-tests/.
+# A rule that fires is a finding to fix in the code. Add an exception only in the rule, with a reason.
+ruleDirs:
+  - config/ast-grep/rules
+testConfigs:
+  - testDir: config/ast-grep/rule-tests

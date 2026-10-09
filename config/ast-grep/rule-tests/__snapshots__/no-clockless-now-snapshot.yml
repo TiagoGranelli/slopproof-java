@@ -1,0 +1,20 @@
+id: no-clockless-now
+snapshots:
+  ? |
+    class Posts {
+      Instant at() { return Instant.now(); }
+    }
+  : labels:
+    - source: Instant.now()
+      style: primary
+      start: 38
+      end: 51
+  ? |
+    class Posts {
+      LocalDateTime at() { return LocalDateTime.now(); }
+    }
+  : labels:
+    - source: LocalDateTime.now()
+      style: primary
+      start: 44
+      end: 63

@@ -1,0 +1,31 @@
+# Gate: request input reaching a ProcessBuilder or Runtime.exec command.
+# Run: opengrep scan --config config/opengrep --error --taint-intrafile --disable-version-check src/main/java
+# Test: opengrep test --taint-intrafile config/opengrep/rules (the .java beside a rule marks findings with ruleid: and clean lines with ok:)
+rules:
+  - id: command-injection-request-input
+    languages: [java]
+    severity: ERROR
+    message: >-
+      Request input reaches a process command. The input can add arguments or a new command. Run a fixed
+      command and pass the input only as a value that is validated against an allowlist first.
+    mode: taint
+    pattern-sources:
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @RequestParam $TYPE $ARG, ...) { ... }
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @PathVariable $TYPE $ARG, ...) { ... }
+      - patterns:
+          - pattern: $ARG
+          - pattern-inside: |
+              $RET $M(..., @RequestBody $TYPE $ARG, ...) { ... }
+    pattern-sinks:
+      - pattern: new ProcessBuilder(...)
+      - pattern: Runtime.getRuntime().exec(...)
+    metadata:
+      cwe:
+        - "CWE-78: Improper Neutralization of Special Elements used in an OS Command"
+      category: security

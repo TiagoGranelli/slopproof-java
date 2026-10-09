@@ -1,0 +1,19 @@
+id: no-clockless-now
+valid:
+  - |
+    class Posts {
+      LocalDateTime at(Clock clock) { return LocalDateTime.now(clock); }
+    }
+  - |
+    class Posts {
+      Instant at(Clock clock) { return Instant.now(clock); }
+    }
+invalid:
+  - |
+    class Posts {
+      LocalDateTime at() { return LocalDateTime.now(); }
+    }
+  - |
+    class Posts {
+      Instant at() { return Instant.now(); }
+    }

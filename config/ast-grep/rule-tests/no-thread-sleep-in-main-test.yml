@@ -1,0 +1,11 @@
+id: no-thread-sleep-in-main
+valid:
+  - |
+    class Retry {
+      void run() { scheduler.schedule(this::attempt, Duration.ofSeconds(2)); }
+    }
+invalid:
+  - |
+    class Retry {
+      void run() { Thread.sleep(2000); }
+    }

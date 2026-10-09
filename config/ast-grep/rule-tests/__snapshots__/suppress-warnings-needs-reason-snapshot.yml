@@ -1,0 +1,44 @@
+id: suppress-warnings-needs-reason
+snapshots:
+  ? |
+    class Posts {
+      @SuppressWarnings("unchecked")
+      List<Post> read(Object raw) { return (List<Post>) raw; }
+    }
+  : labels:
+    - source: |-
+        @SuppressWarnings("unchecked")
+          List<Post> read(Object raw) { return (List<Post>) raw; }
+      style: primary
+      start: 16
+      end: 105
+    - source: '@SuppressWarnings("unchecked")'
+      style: secondary
+      start: 16
+      end: 46
+    - source: '@SuppressWarnings("unchecked")'
+      style: secondary
+      start: 16
+      end: 46
+  ? |
+    class Posts {
+      @SuppressWarnings("unchecked")
+      private final List<Post> cache = new ArrayList<>();
+    }
+  : labels:
+    - source: |-
+        @SuppressWarnings("unchecked")
+          private final List<Post> cache = new ArrayList<>();
+      style: primary
+      start: 16
+      end: 100
+    - source: '@SuppressWarnings("unchecked")'
+      style: secondary
+      start: 16
+      end: 46
+    - source: |-
+        @SuppressWarnings("unchecked")
+          private final
+      style: secondary
+      start: 16
+      end: 62

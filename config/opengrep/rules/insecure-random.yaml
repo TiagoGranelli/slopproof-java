@@ -1,0 +1,20 @@
+# Gate: any java.util.Random or ThreadLocalRandom in main code. Blanket on purpose: a random value that
+# becomes a token is hard to tell apart from one that does not, so use SecureRandom everywhere.
+# Run: opengrep scan --config config/opengrep --error --taint-intrafile --disable-version-check src/main/java
+# Test: opengrep test --taint-intrafile config/opengrep/rules (the .java beside a rule marks findings with ruleid: and clean lines with ok:)
+rules:
+  - id: insecure-random
+    languages: [java]
+    severity: ERROR
+    message: >-
+      java.util.Random and ThreadLocalRandom are predictable: a value derived from them can be guessed from a
+      few outputs. Use java.security.SecureRandom for tokens, keys, nonces and ids that an attacker must not
+      predict.
+    pattern-either:
+      - pattern: new Random(...)
+      - pattern: new java.util.Random(...)
+      - pattern: ThreadLocalRandom.current()
+    metadata:
+      cwe:
+        - "CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+      category: security

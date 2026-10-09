@@ -1,0 +1,40 @@
+id: no-legacy-date-types
+snapshots:
+  ? |
+    class Posts {
+      Object at() { return Calendar.getInstance(); }
+    }
+  : labels:
+    - source: Calendar.getInstance()
+      style: primary
+      start: 37
+      end: 59
+  ? |
+    class Posts {
+      Object at() { return new Date(); }
+    }
+  : labels:
+    - source: new Date()
+      style: primary
+      start: 37
+      end: 47
+  ? |
+    class Posts {
+      java.util.Date at;
+    }
+  : labels:
+    - source: java.util.Date
+      style: primary
+      start: 16
+      end: 30
+  ? |
+    import java.util.Date;
+
+    class Posts {
+      Instant at() { return null; }
+    }
+  : labels:
+    - source: import java.util.Date;
+      style: primary
+      start: 0
+      end: 22

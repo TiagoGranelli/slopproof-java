@@ -1,0 +1,17 @@
+id: no-sql-concatenation-jooq
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  SQL built by string concatenation lets input change the query. Pass the value as a bind parameter
+  (DSL.sql("... = {0}", value)) or use a typed jOOQ column (table.COLUMN.eq(value)).
+rule:
+  any:
+    - pattern: DSL.sql($$$ARGS)
+    - pattern: DSL.field($$$ARGS)
+    - pattern: DSL.condition($$$ARGS)
+  has:
+    kind: binary_expression
+    regex: '"'
+    stopBy: end

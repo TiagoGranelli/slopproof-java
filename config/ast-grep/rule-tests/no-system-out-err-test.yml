@@ -1,0 +1,16 @@
+id: no-system-out-err
+valid:
+  - |
+    class Posts {
+      private static final Logger log = LoggerFactory.getLogger(Posts.class);
+      void run() { log.info("started"); }
+    }
+invalid:
+  - |
+    class Posts {
+      void run() { System.out.println("started"); }
+    }
+  - |
+    class Posts {
+      void run() { System.err.println("failed"); }
+    }

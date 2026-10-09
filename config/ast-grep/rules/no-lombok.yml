@@ -1,0 +1,16 @@
+id: no-lombok
+language: java
+ignores:
+  - config/opengrep/**
+severity: error
+message: >-
+  Lombok generates code the reader cannot see, and it breaks the Java tooling in this build. Use a record for
+  a value (its accessors, equals and toString are already there) and write the constructor by hand otherwise.
+rule:
+  any:
+    - kind: import_declaration
+      regex: '^import\s+(static\s+)?lombok\.'
+    - kind: marker_annotation
+      regex: '^@lombok\.'
+    - kind: annotation
+      regex: '^@lombok\.'
