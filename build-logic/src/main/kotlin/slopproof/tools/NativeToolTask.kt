@@ -23,8 +23,13 @@ import javax.inject.Inject
 
 /** What a gate does this run: execute the CLI with [arguments], or skip it and say [reason]. */
 sealed interface GatePlan {
-    data class Run(val arguments: List<String>) : GatePlan
-    data class Skip(val reason: String) : GatePlan
+    data class Run(
+        val arguments: List<String>,
+    ) : GatePlan
+
+    data class Skip(
+        val reason: String,
+    ) : GatePlan
 }
 
 /**
@@ -103,7 +108,10 @@ abstract class NativeToolTask : DefaultTask() {
         when (val gate = plan()) {
             // A warning, not a lifecycle line, and no marker: a gate that checked nothing must not look like a pass,
             // and the next run must not be UP-TO-DATE on it.
-            is GatePlan.Skip -> logger.warn("slopproof: ${toolName.get()} NOT RUN: ${gate.reason}")
+            is GatePlan.Skip -> {
+                logger.warn("slopproof: ${toolName.get()} NOT RUN: ${gate.reason}")
+            }
+
             is GatePlan.Run -> {
                 execute(gate.arguments)
                 writeMarker()
@@ -114,7 +122,13 @@ abstract class NativeToolTask : DefaultTask() {
     /** What to run. Subclasses override it when the arguments depend on git state rather than declared inputs. */
     protected open fun plan(): GatePlan {
         val required = requiredPath.orNull
-        if (required != null && !projectDir.file(required).get().asFile.exists()) {
+        if (required != null &&
+            !projectDir
+                .file(required)
+                .get()
+                .asFile
+                .exists()
+        ) {
             return GatePlan.Skip("$required does not exist yet")
         }
         return expandGlobArguments(arguments.get(), projectDir.get().asFile)
@@ -124,12 +138,13 @@ abstract class NativeToolTask : DefaultTask() {
     protected fun execute(cli: List<String>) {
         val release = release()
         val binary = ToolInstaller(toolRoot.get().asFile, mirror.orNull, logger).install(release)
-        val result = execOperations.exec {
-            executable = binary.absolutePath
-            args(cli)
-            workingDir = projectDir.get().asFile
-            isIgnoreExitValue = true
-        }
+        val result =
+            execOperations.exec {
+                executable = binary.absolutePath
+                args(cli)
+                workingDir = projectDir.get().asFile
+                isIgnoreExitValue = true
+            }
         if (result.exitValue != 0) {
             throw GradleException(
                 "slopproof: ${release.name} ${release.version} (${release.platform}) exited with ${result.exitValue}. " +
@@ -141,13 +156,14 @@ abstract class NativeToolTask : DefaultTask() {
     /** Captures the stdout of a git command run in the project, or null when it exits non-zero. */
     protected fun gitOutput(vararg gitArguments: String): ByteArray? {
         val output = ByteArrayOutputStream()
-        val result = execOperations.exec {
-            commandLine("git", *gitArguments)
-            standardOutput = output
-            errorOutput = OutputStream.nullOutputStream()
-            workingDir = projectDir.get().asFile
-            isIgnoreExitValue = true
-        }
+        val result =
+            execOperations.exec {
+                commandLine("git", *gitArguments)
+                standardOutput = output
+                errorOutput = OutputStream.nullOutputStream()
+                workingDir = projectDir.get().asFile
+                isIgnoreExitValue = true
+            }
         return if (result.exitValue == 0) output.toByteArray() else null
     }
 
@@ -176,7 +192,10 @@ abstract class NativeToolTask : DefaultTask() {
     }
 }
 
-private fun expandGlobArguments(arguments: List<String>, projectDir: File): GatePlan {
+private fun expandGlobArguments(
+    arguments: List<String>,
+    projectDir: File,
+): GatePlan {
     val expanded = mutableListOf<String>()
     for (argument in arguments) {
         if (!argument.startsWith(GLOB_PREFIX)) {

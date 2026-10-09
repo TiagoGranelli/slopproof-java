@@ -13,11 +13,13 @@ abstract class OpenApiBreakingTask : NativeToolTask() {
     abstract val specPath: Property<String>
 
     override fun plan(): GatePlan {
-        val base = mergeBase()
-            ?: return GatePlan.Skip("neither origin/main nor main exists to compare with; fetch the default branch")
+        val base =
+            mergeBase()
+                ?: return GatePlan.Skip("neither origin/main nor main exists to compare with; fetch the default branch")
         val spec = specPath.get()
-        val baseSpec = gitOutput("show", "$base:$spec")
-            ?: return GatePlan.Skip("$spec does not exist at merge-base $base, so there is no base to compare")
+        val baseSpec =
+            gitOutput("show", "$base:$spec")
+                ?: return GatePlan.Skip("$spec does not exist at merge-base $base, so there is no base to compare")
         val baseFile = projectDir.file("build/external-tools/checkApiBreaking/base-openapi.yaml").get().asFile
         baseFile.parentFile.mkdirs()
         baseFile.writeBytes(baseSpec)
@@ -25,7 +27,8 @@ abstract class OpenApiBreakingTask : NativeToolTask() {
     }
 
     /** The merge-base of HEAD with origin/main, falling back to a local main; null when neither exists. */
-    private fun mergeBase(): String? = listOf("origin/main", "main").firstNotNullOfOrNull { reference ->
-        gitOutput("merge-base", "HEAD", reference)?.decodeToString()?.trim()?.takeIf { it.isNotEmpty() }
-    }
+    private fun mergeBase(): String? =
+        listOf("origin/main", "main").firstNotNullOfOrNull { reference ->
+            gitOutput("merge-base", "HEAD", reference)?.decodeToString()?.trim()?.takeIf { it.isNotEmpty() }
+        }
 }

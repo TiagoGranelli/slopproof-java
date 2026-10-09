@@ -59,7 +59,11 @@ internal class ToolInstaller(
      * yields. Checking the executable against the archive, not against a hash recorded at install time, is what
      * stops a swapped binary from passing, even one whose marker was rewritten to match.
      */
-    private fun isVerified(release: ToolRelease, dir: File, executable: File): Boolean {
+    private fun isVerified(
+        release: ToolRelease,
+        dir: File,
+        executable: File,
+    ): Boolean {
         val archive = dir.resolve(archiveName(release))
         if (!dir.resolve(COMPLETE_MARKER).isFile || !archive.isFile || !executable.isFile) return false
         if (sha256Of(archive) != release.sha256) return false
@@ -67,12 +71,19 @@ internal class ToolInstaller(
     }
 
     /** The hash the executable must have: the pin itself for a plain binary, else the hash of its entry in the archive. */
-    private fun expectedExecutableSha(release: ToolRelease, archive: File): String? {
+    private fun expectedExecutableSha(
+        release: ToolRelease,
+        archive: File,
+    ): String? {
         val entry = release.entry ?: return release.sha256
         return entrySha256(archive, entry)
     }
 
-    private fun fetch(release: ToolRelease, dir: File, executable: File) {
+    private fun fetch(
+        release: ToolRelease,
+        dir: File,
+        executable: File,
+    ) {
         dir.parentFile.mkdirs()
         val staging = File(dir.parentFile, "${dir.name}.partial")
         deleteTree(staging)
@@ -95,7 +106,11 @@ internal class ToolInstaller(
         check(executable.isFile) { "slopproof: ${release.name} ${release.version} installed without ${executable.name}" }
     }
 
-    private fun materialize(release: ToolRelease, archive: File, target: File) {
+    private fun materialize(
+        release: ToolRelease,
+        archive: File,
+        target: File,
+    ) {
         target.parentFile.mkdirs()
         val entry = release.entry
         if (entry == null) {
@@ -110,7 +125,10 @@ internal class ToolInstaller(
         target.setExecutable(true, false)
     }
 
-    private fun verifyChecksum(release: ToolRelease, archive: File) {
+    private fun verifyChecksum(
+        release: ToolRelease,
+        archive: File,
+    ) {
         val actual = sha256Of(archive)
         if (actual == release.sha256) return
         throw GradleException(
@@ -122,12 +140,13 @@ internal class ToolInstaller(
         )
     }
 
-    private fun <T> underLock(block: () -> T): T = synchronized(jvmInstallLock) {
-        root.mkdirs()
-        FileChannel.open(root.toPath().resolve(LOCK_FILE), StandardOpenOption.CREATE, StandardOpenOption.WRITE).use { channel ->
-            channel.lock().use { block() }
+    private fun <T> underLock(block: () -> T): T =
+        synchronized(jvmInstallLock) {
+            root.mkdirs()
+            FileChannel.open(root.toPath().resolve(LOCK_FILE), StandardOpenOption.CREATE, StandardOpenOption.WRITE).use { channel ->
+                channel.lock().use { block() }
+            }
         }
-    }
 }
 
 private fun archiveName(release: ToolRelease): String = release.url.substringAfterLast('/')
@@ -143,7 +162,10 @@ private fun deleteTree(file: File) {
 }
 
 /** Rewrites a github.com release URL onto [mirror], e.g. an Artifactory remote for GitHub. */
-internal fun mirrorUrl(url: String, mirror: String?): String {
+internal fun mirrorUrl(
+    url: String,
+    mirror: String?,
+): String {
     if (mirror.isNullOrBlank()) return url
     return url.replaceFirst("https://github.com/", mirror.trimEnd('/') + "/")
 }

@@ -14,7 +14,10 @@ private const val WILDCARDS = "*?[{"
  * matches any depth. Sorted, with `/` separators.
  * The literal leading directories are the walk root, so only the wildcard part is matched.
  */
-fun matchFiles(projectDir: File, pattern: String): List<String> {
+fun matchFiles(
+    projectDir: File,
+    pattern: String,
+): List<String> {
     val segments = pattern.split('/')
     val literal = segments.takeWhile { segment -> WILDCARDS.none { it in segment } }
     require(literal.size < segments.size) { "glob \"$pattern\" has no wildcard; pass a plain path instead" }

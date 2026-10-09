@@ -10,7 +10,10 @@ private val TABLE_NAME = Regex("[A-Za-z0-9_.-]+")
  * string pairs and full-line comments. Anything else fails with its line number, because a typo that
  * silently dropped a pinned hash would defeat the checksum.
  */
-internal fun parseTomlTables(text: String, source: String): Map<String, Map<String, String>> {
+internal fun parseTomlTables(
+    text: String,
+    source: String,
+): Map<String, Map<String, String>> {
     val tables = linkedMapOf<String, MutableMap<String, String>>()
     var current = tables.getOrPut("") { linkedMapOf() }
     text.lines().forEachIndexed { index, raw ->
@@ -31,7 +34,10 @@ internal fun parseTomlTables(text: String, source: String): Map<String, Map<Stri
     return tables
 }
 
-private fun tableName(line: String, where: String): String {
+private fun tableName(
+    line: String,
+    where: String,
+): String {
     val name = line.removePrefix("[").removeSuffix("]").trim()
     if (!line.endsWith("]") || !TABLE_NAME.matches(name)) {
         throw GradleException("$where: expected a table header like [tool.platform] (got \"$line\")")
@@ -39,7 +45,10 @@ private fun tableName(line: String, where: String): String {
     return name
 }
 
-private fun keyValue(line: String, where: String): Pair<String, String> {
+private fun keyValue(
+    line: String,
+    where: String,
+): Pair<String, String> {
     val separator = line.indexOf('=')
     val key = if (separator < 0) "" else line.substring(0, separator).trim()
     val quoted = if (separator < 0) "" else line.substring(separator + 1).trim()
