@@ -1,0 +1,201 @@
+# Native CLIs that the gates run (see build-logic/.../slopproof.external-tools.gradle.kts).
+#
+# Gradle downloads each pinned release once into $GRADLE_USER_HOME/slopproof-tools, checks its SHA-256
+# against this file, and runs it. Nothing is installed system-wide, and no Docker, WSL or Node is needed.
+#
+# Layout: one [tool] table (version, released) and one [tool.<platform>] table per platform, with:
+#   url     https://github.com/... release asset (the -Pslopproof.tools.mirror option rewrites this prefix)
+#   sha256  64 hex characters of the asset, from the release checksums file or sha256sum
+#   entry   path of the executable inside a .zip or .tar.gz asset; omit it for a plain executable
+# Platforms: windows-x64, linux-x64, linux-arm64, macos-arm64, macos-x64.
+#
+# To bump a tool: take a release at least one day old, re-hash every platform asset, and check that the
+# entry still names the executable. Only the subset of TOML parsed by slopproof/tools/TomlSubset.kt is allowed.
+
+[vacuum]
+version = "0.32.0"
+released = "2026-10-07"
+
+[vacuum.windows-x64]
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.32.0/vacuum_0.32.0_windows_x86_64.tar.gz"
+sha256 = "1ec2136f1d85b90bbab7a7f40659a4c1d20a98de56ba9c576683077837f2a08c"
+entry = "vacuum.exe"
+
+[vacuum.linux-x64]
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.32.0/vacuum_0.32.0_linux_x86_64.tar.gz"
+sha256 = "4edffd8e543a4320c1f8cbcd9dfdcba33edbb3e527c77e94bd2c72409ccc85e7"
+entry = "vacuum"
+
+[vacuum.linux-arm64]
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.32.0/vacuum_0.32.0_linux_arm64.tar.gz"
+sha256 = "f800e211b8060cc34d7c9bb0b1504e651298c7c63da271f95c37173d831cf8a8"
+entry = "vacuum"
+
+[vacuum.macos-arm64]
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.32.0/vacuum_0.32.0_darwin_arm64.tar.gz"
+sha256 = "f1ccc34c55090089eee9a4e99795ef24b92bd9a6ad07c83c7d55a562fb96a318"
+entry = "vacuum"
+
+[vacuum.macos-x64]
+url = "https://github.com/daveshanley/vacuum/releases/download/v0.32.0/vacuum_0.32.0_darwin_x86_64.tar.gz"
+sha256 = "92e1744d98a7c1010cd818040178bcc682294c2241cc25b9e8fb860d5279ff56"
+entry = "vacuum"
+
+[oasdiff]
+version = "1.33.0"
+released = "2026-10-01"
+
+[oasdiff.windows-x64]
+url = "https://github.com/oasdiff/oasdiff/releases/download/v1.33.0/oasdiff_1.33.0_windows_amd64.tar.gz"
+sha256 = "22f98c7247075f8a446e783595802d6d38637de1760df264f3d4b3309f766c5b"
+entry = "oasdiff.exe"
+
+[oasdiff.linux-x64]
+url = "https://github.com/oasdiff/oasdiff/releases/download/v1.33.0/oasdiff_1.33.0_linux_amd64.tar.gz"
+sha256 = "43a4e328e2d13ba1552d760aa68d2485c75c5621f309f6ff64ae895188345247"
+entry = "oasdiff"
+
+[oasdiff.linux-arm64]
+url = "https://github.com/oasdiff/oasdiff/releases/download/v1.33.0/oasdiff_1.33.0_linux_arm64.tar.gz"
+sha256 = "4ae3c362d6074d919aada2dea82d0ee84366591600384455d0bdc658ddf8f7ae"
+entry = "oasdiff"
+
+[oasdiff.macos-arm64]
+url = "https://github.com/oasdiff/oasdiff/releases/download/v1.33.0/oasdiff_1.33.0_darwin_all.tar.gz"
+sha256 = "2a479337c15afdcbf0b1e89c0b4d0cf0176472dbc11483358fed1f831d1e46c5"
+entry = "oasdiff"
+
+[oasdiff.macos-x64]
+url = "https://github.com/oasdiff/oasdiff/releases/download/v1.33.0/oasdiff_1.33.0_darwin_all.tar.gz"
+sha256 = "2a479337c15afdcbf0b1e89c0b4d0cf0176472dbc11483358fed1f831d1e46c5"
+entry = "oasdiff"
+
+[squawk]
+version = "2.68.0"
+released = "2026-10-08"
+
+[squawk.windows-x64]
+url = "https://github.com/sbdchd/squawk/releases/download/v2.68.0/squawk-windows-x64.exe"
+sha256 = "4ac6a8ec9e0f2840a0eb344b8fd8bade99c414051099ed01aecb6f650e77cff0"
+
+[squawk.linux-x64]
+url = "https://github.com/sbdchd/squawk/releases/download/v2.68.0/squawk-linux-x64"
+sha256 = "53070672cbe0b8adce55372931d4435cc2395edd8b5736819a82e483b08d4d09"
+
+[squawk.linux-arm64]
+url = "https://github.com/sbdchd/squawk/releases/download/v2.68.0/squawk-linux-arm64"
+sha256 = "122f635ec9a56239f93b5ac05cb4884d473f7840ffccac3db574fd5f138b1b18"
+
+[squawk.macos-arm64]
+url = "https://github.com/sbdchd/squawk/releases/download/v2.68.0/squawk-darwin-arm64"
+sha256 = "288f48b86776057038ed86fd3f916f127b107a6c0398f41735bbe7f19b474ca3"
+
+[squawk.macos-x64]
+url = "https://github.com/sbdchd/squawk/releases/download/v2.68.0/squawk-darwin-x64"
+sha256 = "a4a0194939ed4b5c0b438bba8119f6252fb6d4295e824661962493a79639c3b7"
+
+[ast-grep]
+version = "0.45.3"
+released = "2026-08-31"
+
+[ast-grep.windows-x64]
+url = "https://github.com/ast-grep/ast-grep/releases/download/0.45.3/app-x86_64-pc-windows-msvc.zip"
+sha256 = "3751b7d6be7fd39a80df1180ffe7e053903dcf92d3190e5a8336ff1746af9059"
+entry = "ast-grep.exe"
+
+[ast-grep.linux-x64]
+url = "https://github.com/ast-grep/ast-grep/releases/download/0.45.3/app-x86_64-unknown-linux-gnu.zip"
+sha256 = "f8ac830881339d1edee6b2652f54798c0f4da5a827f2db38a08ee31117783ce8"
+entry = "ast-grep"
+
+[ast-grep.linux-arm64]
+url = "https://github.com/ast-grep/ast-grep/releases/download/0.45.3/app-aarch64-unknown-linux-gnu.zip"
+sha256 = "b39cfbc58da4b869a88b8a4bc57bd5deb0d24541e704cf7c257da7b53ec81c8f"
+entry = "ast-grep"
+
+[ast-grep.macos-arm64]
+url = "https://github.com/ast-grep/ast-grep/releases/download/0.45.3/app-aarch64-apple-darwin.zip"
+sha256 = "6d2279dea5bea2ad79c66ea93f5fe54ba926e398a8a26de76c56db68fe59eac6"
+entry = "ast-grep"
+
+[ast-grep.macos-x64]
+url = "https://github.com/ast-grep/ast-grep/releases/download/0.45.3/app-x86_64-apple-darwin.zip"
+sha256 = "b2ffd26f42810340326a9e8a084bdc3647a8795c1a3f21fc06bd7bef3c7c5b2c"
+entry = "ast-grep"
+
+[opengrep]
+version = "1.30.2"
+released = "2026-10-07"
+
+[opengrep.windows-x64]
+url = "https://github.com/opengrep/opengrep/releases/download/v1.30.2/opengrep_windows_x86.exe"
+sha256 = "523b1074a81006436fec457e2daccf7cf7cacc04000d4482f1072a1b19bc6372"
+
+[opengrep.linux-x64]
+url = "https://github.com/opengrep/opengrep/releases/download/v1.30.2/opengrep_manylinux_x86"
+sha256 = "a66aa3278457f02b287b985a45b6762aebcaba5000f2689245fd1ed86d1456c7"
+
+[opengrep.linux-arm64]
+url = "https://github.com/opengrep/opengrep/releases/download/v1.30.2/opengrep_manylinux_aarch64"
+sha256 = "90acea5df4b733083f388d4feeb250ca802f671b33d1f222653d1e571dd2b0d8"
+
+[opengrep.macos-arm64]
+url = "https://github.com/opengrep/opengrep/releases/download/v1.30.2/opengrep_osx_arm64"
+sha256 = "f1aaa30b88959cb82522c4e1475816278a1f161f994509a518453c0455f9d24b"
+
+[opengrep.macos-x64]
+url = "https://github.com/opengrep/opengrep/releases/download/v1.30.2/opengrep_osx_x86"
+sha256 = "fcf47da30d5c3a11119f2ec4e0d1ee55e3c3822e8f90d909bf9f33dfce99044a"
+
+[gitleaks]
+version = "8.30.1"
+released = "2026-03-21"
+
+[gitleaks.windows-x64]
+url = "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_x64.zip"
+sha256 = "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e"
+entry = "gitleaks.exe"
+
+[gitleaks.linux-x64]
+url = "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz"
+sha256 = "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+entry = "gitleaks"
+
+[gitleaks.linux-arm64]
+url = "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_arm64.tar.gz"
+sha256 = "e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080"
+entry = "gitleaks"
+
+[gitleaks.macos-arm64]
+url = "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_arm64.tar.gz"
+sha256 = "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5"
+entry = "gitleaks"
+
+[gitleaks.macos-x64]
+url = "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_x64.tar.gz"
+sha256 = "dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709"
+entry = "gitleaks"
+
+[osv-scanner]
+version = "2.6.0"
+released = "2026-09-14"
+
+[osv-scanner.windows-x64]
+url = "https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_windows_amd64.exe"
+sha256 = "e0ed7644118b717b028c249ee9d3515024e55e8510747ca08906eb96765354d6"
+
+[osv-scanner.linux-x64]
+url = "https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64"
+sha256 = "ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108"
+
+[osv-scanner.linux-arm64]
+url = "https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_arm64"
+sha256 = "2c71403eb443d05891c4f268c3ad771cf4f16e5443463fd7851ef8f454d3c7e4"
+
+[osv-scanner.macos-arm64]
+url = "https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_darwin_arm64"
+sha256 = "98c460dcd37de25819babd757d04542045b6243113e209edcd4d89fedb0256b4"
+
+[osv-scanner.macos-x64]
+url = "https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_darwin_amd64"
+sha256 = "60c5296637e977b28eeda5c7f13573e447659a632922737f94d11fa7e30ad6ca"
