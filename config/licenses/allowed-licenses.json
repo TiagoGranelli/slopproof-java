@@ -1,0 +1,22 @@
+{
+  "allowedLicenses": [
+    { "moduleLicense": "Apache-2.0" },
+    { "moduleLicense": "MIT" },
+    { "moduleLicense": "BSD-2-Clause" },
+    { "moduleLicense": "BSD-3-Clause" },
+    { "moduleLicense": "ISC" },
+    { "moduleLicense": "EPL-2.0" },
+    { "moduleLicense": "UPL-1.0" },
+    { "moduleLicense": "CC0-1.0" },
+    { "moduleLicense": "LicenseRef-Public-Domain" },
+    { "moduleLicense": "EPL-1.0" },
+    { "moduleLicense": "MPL-2.0" },
+    { "moduleLicense": "CDDL-1.0" },
+    { "moduleLicense": "CDDL-1.1" },
+    { "moduleLicense": "LGPL-2.1-only" },
+    { "moduleLicense": "LGPL-2.1-or-later" },
+    { "moduleLicense": "LGPL-3.0-only" },
+    { "moduleLicense": "LGPL-3.0-or-later" },
+    { "moduleLicense": "GPL-2.0-only WITH Classpath-exception-2.0" }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["gradle", "gradle-wrapper", "github-actions"],
+  "dependencyDashboard": true,
+  "schedule": ["before 6am on monday"],
+  "rangeStrategy": "pin",
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "lockFileMaintenance": { "enabled": false },
+  "labels": ["dependencies"],
+  "vulnerabilityAlerts": { "labels": ["security"] },
+  "packageRules": [
+    {
+      "description": "Spring Boot gets its own PR: the plugin version sets the BOM that manages the other libraries.",
+      "matchPackageNames": ["/^org\\.springframework\\.boot(:|$)/"],
+      "groupName": "spring-boot"
+    },
+    {
+      "description": "Libraries the Spring Boot BOM manages but the build pins for codegen (Flyway, PostgreSQL). Their catalog versions must equal the BOM's, so review the PR against the BOM before merging.",
+      "matchPackageNames": ["/^org\\.flywaydb:/", "/^org\\.postgresql:postgresql$/"],
+      "groupName": "spring-boot BOM-managed"
+    },
+    {
+      "description": "jOOQ codegen runs in build-logic, outside the Spring Boot BOM, so its version must equal the one the BOM manages. Own PR for that reason.",
+      "matchPackageNames": ["/^org\\.jooq:/"],
+      "groupName": "jooq"
+    },
+    {
+      "description": "The OpenAPI generator changes generated code, so its bumps get their own PR and their own review of src/sdk.",
+      "matchPackageNames": ["/^org\\.openapi\\.generator(:|$)/", "/^org\\.openapitools:/"],
+      "groupName": "openapi-generator"
+    },
+    {
+      "description": "NullAway is an Error Prone check and must match the Error Prone version it runs on, so they share one PR.",
+      "matchPackageNames": [
+        "/^net\\.ltgt\\.errorprone(:|$)/",
+        "/^com\\.google\\.errorprone:error_prone_core$/",
+        "/^com\\.uber\\.nullaway:nullaway$/"
+      ],
+      "groupName": "error-prone and NullAway"
+    },
+    {
+      "description": "Gradle wrapper updates are build-tool changes: a label, never automerged.",
+      "matchManagers": ["gradle-wrapper"],
+      "labels": ["build"]
+    },
+    {
+      "description": "Vulnerability fixes skip the 7-day wait. Renovate documents that security updates bypass minimumReleaseAge; this rule asks for a 1-day floor, so a release is at least a day old before it reaches a PR.",
+      "matchPackageNames": ["*"],
+      "isVulnerabilityAlert": true,
+      "minimumReleaseAge": "1 day"
+    }
+  ]
+}

@@ -1,5 +1,15 @@
+import org.gradle.api.artifacts.dsl.LockMode
+
 plugins {
     `kotlin-dsl`
+}
+
+// wp:supply-chain
+// The convention plugins compile against these jars on every build, so they are locked like the project's own
+// configurations (build-logic/gradle.lockfile, written by `./gradlew resolveAndLockAll --write-locks`).
+dependencyLocking {
+    lockAllConfigurations()
+    lockMode = LockMode.STRICT
 }
 
 // A plugin from the version catalog, as the coordinates of its marker artifact, so the convention

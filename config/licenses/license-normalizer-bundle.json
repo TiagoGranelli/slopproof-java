@@ -1,0 +1,31 @@
+{
+  "bundles": [
+    { "bundleName": "Apache-2.0", "licenseName": "Apache-2.0", "licenseUrl": "https://www.apache.org/licenses/LICENSE-2.0" },
+    { "bundleName": "MIT", "licenseName": "MIT", "licenseUrl": "https://opensource.org/licenses/MIT" },
+    { "bundleName": "BSD-3-Clause", "licenseName": "BSD-3-Clause", "licenseUrl": "https://opensource.org/licenses/BSD-3-Clause" },
+    { "bundleName": "BSD-2-Clause", "licenseName": "BSD-2-Clause", "licenseUrl": "https://opensource.org/licenses/BSD-2-Clause" },
+    { "bundleName": "EPL-2.0", "licenseName": "EPL-2.0", "licenseUrl": "https://www.eclipse.org/legal/epl-2.0" },
+    { "bundleName": "EPL-1.0", "licenseName": "EPL-1.0", "licenseUrl": "https://www.eclipse.org/legal/epl-v10.html" },
+    { "bundleName": "LGPL-2.1-only", "licenseName": "LGPL-2.1-only", "licenseUrl": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html" },
+    { "bundleName": "GPL-2.0-only WITH Classpath-exception-2.0", "licenseName": "GPL-2.0-only WITH Classpath-exception-2.0", "licenseUrl": "https://openjdk.org/legal/gplv2+ce.html" },
+    { "bundleName": "CC0-1.0", "licenseName": "CC0-1.0", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/legalcode" },
+    { "bundleName": "LicenseRef-Public-Domain", "licenseName": "LicenseRef-Public-Domain", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/" }
+  ],
+  "transformationRules": [
+    { "licenseNamePattern": "(Apache License,? Version 2\\.0|The Apache License,? Version 2\\.0|The Apache Software License,? Version 2\\.0|Apache License 2\\.0|Apache 2\\.0|Apache-2\\.0)", "bundleName": "Apache-2.0" },
+    { "licenseUrlPattern": "https?://www\\.apache\\.org/licenses/LICENSE-2\\.0(\\.txt)?", "bundleName": "Apache-2.0" },
+    { "licenseNamePattern": "(MIT License|The MIT License|MIT)", "bundleName": "MIT" },
+    { "licenseNamePattern": "(The 3-Clause BSD License|BSD 3-Clause License|New BSD License|BSD-3-Clause|Eclipse Distribution License - v 1\\.0|Eclipse Distribution License v\\. 1\\.0|EDL 1\\.0|The Go License|Go License)", "bundleName": "BSD-3-Clause" },
+    { "licenseUrlPattern": "https?://(opensource\\.org/licenses/BSD-3-Clause|www\\.eclipse\\.org/org/documents/edl-v10\\.php|go\\.dev/LICENSE)", "bundleName": "BSD-3-Clause" },
+    { "licenseNamePattern": "(The 2-Clause BSD License|BSD 2-Clause License|Simplified BSD License|BSD-2-Clause)", "bundleName": "BSD-2-Clause" },
+    { "licenseUrlPattern": "https?://www\\.eclipse\\.org/legal/epl-v20\\.html", "bundleName": "EPL-2.0" },
+    { "licenseNamePattern": "(Eclipse Public License - v 2\\.0|Eclipse Public License v\\.? ?2\\.0|Eclipse Public License 2\\.0|EPL 2\\.0|EPL-2\\.0)", "bundleName": "EPL-2.0" },
+    { "licenseUrlPattern": "https?://www\\.eclipse\\.org/legal/epl-2\\.0|https?://www\\.eclipse\\.org/org/documents/epl-2\\.0/EPL-2\\.0\\.txt", "bundleName": "EPL-2.0" },
+    { "licenseNamePattern": "(Eclipse Public License - v 1\\.0|Eclipse Public License v\\.? ?1\\.0|EPL 1\\.0|EPL-1\\.0)", "bundleName": "EPL-1.0" },
+    { "licenseUrlPattern": "https?://www\\.gnu\\.org/licenses/(old-licenses/)?lgpl-2\\.1(\\.html)?", "bundleName": "LGPL-2.1-only" },
+    { "licenseNamePattern": "(GNU LESSER GENERAL PUBLIC LICENSE,? Version 2\\.1|GNU Lesser General Public License,? version 2\\.1|LGPL-2\\.1-only|LGPL 2\\.1)", "bundleName": "LGPL-2.1-only" },
+    { "licenseNamePattern": "(GNU GENERAL PUBLIC LICENSE,? Version 2 \\+ Classpath Exception|GNU General Public License,? version 2 with the GNU Classpath Exception|GPL2 w/ CPE|GPL-2\\.0-only WITH Classpath-exception-2\\.0)", "bundleName": "GPL-2.0-only WITH Classpath-exception-2.0" },
+    { "licenseNamePattern": "(CC0 1\\.0 Universal|CC0-1\\.0|Creative Commons Zero v1\\.0 Universal)", "bundleName": "CC0-1.0" },
+    { "licenseNamePattern": "(Public Domain|public domain)", "bundleName": "LicenseRef-Public-Domain" }
+  ]
+}

@@ -1,0 +1,54 @@
+# The same `check` gate on Linux and Windows: the target laptops are Windows, so Windows is a first-class runner.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# The job builds and tests; it never pushes, so the token gets read access only.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      # One OS failing should not hide the other's result.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Without it the checkout keeps no token in .git/config, so the build cannot push with the job credentials.
+          persist-credentials: false
+
+      # Gradle would otherwise download a JDK 25 from foojay, which corporate networks often block.
+      - name: Set up Temurin 25
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      # Caches the Gradle user home and the wrapper distribution; setup-java cache: would duplicate that.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Check (Linux)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./gradlew check --no-daemon
+
+      # Windows runs gradlew.bat: the Unix gradlew script is not executable on a Windows checkout.
+      - name: Check (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\gradlew.bat check --no-daemon
